@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Yayınla · Hane Defteri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--kagit:#E9EDE4;--kart:#F6F8F2;--murekkep:#1B2621;--sis:#5A665F;
+--erik:#6B2D5C;--altin:#B8862B;--cam:#2F7B72;--cizgi:#CBD3C6;--r:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--kagit);color:var(--murekkep);font-family:"Public Sans",system-ui,sans-serif;
+font-size:16px;line-height:1.5;padding:0 0 4rem;-webkit-font-smoothing:antialiased}
+.sar{max-width:640px;margin:0 auto;padding:0 1.1rem}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.goz{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sis);font-weight:600}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+:focus-visible{outline:2px solid var(--erik);outline-offset:2px;border-radius:4px}
+header{padding:2.2rem 0 1rem}
+h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;letter-spacing:-.02em;font-size:1.9rem;margin-top:.3rem}
+input,select,textarea{font:inherit;padding:.7rem .85rem;border:1px solid var(--cizgi);border-radius:10px;
+background:var(--kart);color:var(--murekkep);width:100%;font-family:inherit}
+textarea{min-height:110px;font-family:"JetBrains Mono",monospace;font-size:.8rem}
+label{display:block;font-size:.82rem;color:var(--sis);margin-bottom:.3rem;font-weight:500}
+.btn{background:var(--erik);color:#fff;padding:.78rem 1rem;border-radius:10px;font-weight:600;
+text-align:center;display:block;width:100%}
+.btn.ikincil{background:transparent;color:var(--erik);border:1px solid var(--erik)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.adim{margin-top:1.6rem;background:var(--kart);border:1px solid var(--cizgi);border-radius:var(--r);padding:1.1rem}
+.adim>h2{font-size:1rem;font-weight:600;margin-bottom:.9rem;display:flex;align-items:center;gap:.55rem}
+.adim>h2 .no{font-family:"JetBrains Mono",monospace;font-size:.72rem;background:var(--erik);color:#fff;
+width:1.5rem;height:1.5rem;border-radius:6px;display:grid;place-items:center;flex:none;font-weight:700}
+.satirlar{display:flex;flex-direction:column;gap:.75rem}
+.iki{display:flex;gap:.6rem}.iki>*{flex:1;min-width:0}
+.ipucu{font-size:.78rem;color:var(--sis);margin-top:.45rem;line-height:1.5}
+.rapor{margin-top:.9rem;font-size:.88rem}
+.rapor .r{display:flex;justify-content:space-between;padding:.34rem 0;border-bottom:1px solid rgba(203,211,198,.6)}
+.rapor .r:last-child{border:none}
+.rapor .r b{font-family:"JetBrains Mono",monospace;font-weight:600}
+.uyari{background:rgba(184,134,43,.13);border:1px solid rgba(184,134,43,.4);border-radius:10px;
+padding:.7rem .85rem;font-size:.82rem;margin-top:.8rem;line-height:1.55}
+.uyari ul{margin:.4rem 0 0 1.1rem}
+.uyari li{margin-bottom:.2rem;font-family:"JetBrains Mono",monospace;font-size:.76rem}
+.tk{display:flex;gap:.5rem;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(203,211,198,.6);font-size:.86rem}
+.tk:last-of-type{border:none}
+.tk .ad{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk .sil{color:#9B2226;font-size:1.15rem;line-height:1;padding:.2rem .4rem;flex:none}
+.durum{margin-top:1rem;font-size:.88rem;min-height:1.3em;font-weight:500}
+.durum.ok{color:var(--cam)} .durum.hata{color:#9B2226}
+.gizle{display:none}
+a{color:var(--erik)}
+</style>
+</head>
+<body>
+<div class="sar">
+<header><div class="goz">Kesikbaş hanesi</div><h1>Yayınla</h1></header>
+
+<!-- 1 -->
+<div class="adim">
+  <h2><span class="no">1</span>Sohbet dosyası</h2>
+  <input type="file" id="dosya" accept=".txt,text/plain">
+  <div class="ipucu">WhatsApp → Harcamalar grubu → Sohbeti Dışa Aktar → <b>Medya olmadan</b> → Dosyalara Kaydet. Sonra buradan seç.</div>
+  <div id="rapor" class="rapor gizle"></div>
+  <div id="atlanan" class="uyari gizle"></div>
+  <div id="kategorisiz" class="uyari gizle"></div>
+</div>
+
+<!-- 2 -->
+<div class="adim">
+  <h2><span class="no">2</span>Aylık hedef</h2>
+  <div class="iki">
+    <div><label for="hedef">Hedef (₺)</label><input type="number" id="hedef" inputmode="numeric" placeholder="60000"></div>
+  </div>
+  <div class="ipucu">Panelde ilerleme çubuğu bu rakama göre dolar. İstediğin zaman değiştir.</div>
+</div>
+
+<!-- 3 -->
+<div class="adim">
+  <h2><span class="no">3</span>Devam eden taksitler</h2>
+  <div id="tkListe"></div>
+  <div class="satirlar" style="margin-top:.8rem">
+    <div class="iki">
+      <div><label for="tAd">Açıklama</label><input type="text" id="tAd" placeholder="Buzdolabı"></div>
+      <div><label for="tAylik">Aylık (₺)</label><input type="number" id="tAylik" inputmode="numeric" placeholder="2000"></div>
+    </div>
+    <div class="iki">
+      <div><label for="tBas">Başlangıç ayı</label><input type="month" id="tBas"></div>
+      <div><label for="tAdet">Taksit sayısı</label><input type="number" id="tAdet" inputmode="numeric" placeholder="6"></div>
+    </div>
+    <div class="iki">
+      <div><label for="tKat">Kategori</label><input type="text" id="tKat" placeholder="Ev eşyası"></div>
+      <div><label for="tSat">Satıcı</label><input type="text" id="tSat" placeholder="teknosa"></div>
+    </div>
+    <button class="btn ikincil" id="tEkle">Taksit ekle</button>
+  </div>
+  <div class="ipucu">Başlangıç ayı sabit kalır, kalan ay sayısını panel kendi hesaplar. Yeni taksitli alışverişleri WhatsApp'a yazarsan buraya eklemene gerek yok.</div>
+</div>
+
+<!-- 4 -->
+<div class="adim">
+  <h2><span class="no">4</span>Parola</h2>
+  <input type="password" id="parola" placeholder="Panel parolası" autocomplete="off">
+  <div class="ipucu">Merve'nin panelde gireceği parola. Her yayında aynısını kullan — değiştirirsen ona haber ver.</div>
+</div>
+
+<!-- 5 -->
+<div class="adim">
+  <h2><span class="no">5</span>GitHub</h2>
+  <div class="satirlar">
+    <div class="iki">
+      <div><label for="owner">Kullanıcı</label><input type="text" id="owner" value="ozhankesikbas"></div>
+      <div><label for="repo">Repo</label><input type="text" id="repo" value="harcama-rapor"></div>
+    </div>
+    <div><label for="token">Token</label><input type="password" id="token" placeholder="github_pat_…" autocomplete="off"></div>
+  </div>
+  <div class="ipucu">Token bu cihazda saklanır, hiçbir yere gönderilmez. <button id="unut" style="color:#9B2226;text-decoration:underline">Bu cihazdan sil</button></div>
+</div>
+
+<div style="margin-top:1.6rem">
+  <button class="btn" id="yayinla" disabled>Yayınla</button>
+  <div class="durum" id="durum"></div>
+  <div class="ipucu" style="text-align:center">Yayından ~1 dakika sonra Merve'nin sayfası güncellenir.</div>
+</div>
+
+<div class="adim">
+  <h2><span class="no">↺</span>Kurtarma</h2>
+  <button class="btn ikincil" id="getir">Yayındaki ayarları getir</button>
+  <div class="ipucu">Yeni bir cihazda hedef ve taksit listesini geri yüklemek için. Parola alanını doldurup bas.</div>
+</div>
+</div>
+
+<script>
+/* ---------- kategori sözlüğü ---------- */
+const SOZLUK = {
+  'Market':['market','migros','a101','bim','şok','sok','carrefour','macrocenter','getir','bakkal','manav','kasap','ekmek','su','süt','sut','fırın','firin','tarım kredi'],
+  'Atıştırmalık':['dondurma','kuruyemiş','kuruyemis','çikolata','cikolata','tatlı','tatli','pasta','baklava','cips','şekerleme'],
+  'Dışarıda yemek':['kahvaltı','kahvalti','restoran','lokanta','cafe','kafe','kahve','bahşiş','bahsis','döner','doner','pizza','burger','yemek','starbucks','çay'],
+  'Ev & yapı':['bauhaus','koçtaş','koctas','ikea','tekzen','madame coco','english home','karaca','mobilya','raf','perde','havlu','nevresim','hırdavat','boya'],
+  'Sağlık':['eczane','hastane','doktor','ilaç','ilac','diş','dis','muayene','vitamin','gözlük','optik'],
+  'Araç':['benzin','mazot','yakıt','yakit','otopark','cam suyu','lastik','hgs','ogs','oto','servis','yıkama','petrol','opet','shell','bp'],
+  'Kişisel bakım':['jel','krem','şampuan','sampuan','kuaför','kuafor','berber','parfüm','parfum','makyaj','sabun','deodorant','cilt'],
+  'Giyim':['giyim','ayakkabı','ayakkabi','elbise','pantolon','gömlek','tişört','mont','çanta','lcw','defacto','koton','zara','mavi'],
+  'Elektronik':['teknosa','vatan','mediamarkt','telefon','laptop','kulaklık','şarj','tablet','bilgisayar','televizyon'],
+  'Fatura & abonelik':['fatura','elektrik','doğalgaz','dogalgaz','internet','aidat','kira','netflix','spotify','abonelik','telefon faturası','vergi','sigorta'],
+  'Ulaşım':['taksi','uber','bitaksi','otobüs','metro','bilet','uçak','ucak','tren','kart dolum'],
+  'Eğlence & hediye':['sinema','tiyatro','konser','hediye','oyun','kitap','çiçek','cicek']
+};
+/* satıcı adı kategori belirlemez (trendyol her şeyi satar) */
+const NOTRSATICI = ['trendyol','hepsiburada','amazon','n11','gittigidiyor','pazarama','çiçeksepeti'];
+
+/* ---------- yardımcılar ---------- */
+const $ = id => document.getElementById(id);
+const TL0 = n => Math.round(n).toLocaleString('tr-TR');
+const kucuk = s => s.toLocaleLowerCase('tr').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g')
+  .replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/â/g,'a');
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+
+function sayiCoz(s){
+  s = s.trim();
+  if(s.includes(',')) return parseFloat(s.replace(/\./g,'').replace(',','.'));
+  if(/^\d{1,3}(\.\d{3})+$/.test(s)) return parseFloat(s.replace(/\./g,''));
+  return parseFloat(s);
+}
+function tutarAyikla(msg){
+  let m = msg.match(/^\s*(-)?\s*₺\s*([\d.,]+)\s*/);
+  if(!m) m = msg.match(/^\s*(-)?\s*([\d.,]+)\s*(?:₺|(?:tl|try|lira)\b)\.?\s*/i);
+  if(!m) return null;
+  const v = sayiCoz(m[2]);
+  if(!isFinite(v) || v===0) return null;
+  return { tutar:(m[1]?-1:1)*v, kalan: msg.slice(m[0].length).trim() };
+}
+/* uzun anahtar kelime kısa olanı yener: "cam suyu" → Araç, "su" → Market */
+const DUZ = Object.entries(SOZLUK)
+  .flatMap(([kat,ks])=>ks.map(k=>({kat, k:kucuk(k)})))
+  .sort((a,b)=>b.k.length-a.k.length);
+const gecer = (metin,k) => {
+  let i = -1;
+  while((i = metin.indexOf(k, i+1)) !== -1){
+    const onc = i===0 ? ' ' : metin[i-1];
+    if(!/[a-z0-9]/.test(onc)) return true;   // kelime başında olmalı, sonrasına ek gelebilir
+  }
+  return false;
+};
+function kategoriBul(aciklama, satici){
+  const a = kucuk(aciklama);
+  for(const {kat,k} of DUZ) if(gecer(a,k)) return kat;
+  if(satici && !NOTRSATICI.includes(kucuk(satici))){
+    const s = kucuk(satici);
+    for(const {kat,k} of DUZ) if(gecer(s,k)) return kat;
+  }
+  return 'Diğer';
+}
+
+const SATIR = /^\[?\s*(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})[,]?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*\]?\s*(?:-\s*)?([^:]{1,64}):\s*([\s\S]*)$/;
+const SISTEM = /(şifreli|sifreli|bu mesaj silindi|oluşturdunuz|olusturdunuz|değiştirdiniz|degistirdiniz|ekledi|ayrıldı|ayrildi|çıkardı|cikardi|katıldı|katildi|güvenlik kodu|görüntülü|sesli arama)/i;
+
+function ayikla(metin){
+  const satirlar = metin.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g,'').split(/\r?\n/);
+  const kayitlar = [], atlanan = [];
+  for(const ham of satirlar){
+    const m = ham.match(SATIR);
+    if(!m) continue;
+    const [,g,ay,yl,,,kisi,mesaj] = m;
+    const yil = yl.length===2 ? '20'+yl : yl;
+    const tarih = `${yil}-${ay.padStart(2,'0')}-${g.padStart(2,'0')}`;
+    const t = tutarAyikla(mesaj.trim());
+    if(!t){ if(mesaj.trim() && !SISTEM.test(mesaj)) atlanan.push(mesaj.trim().slice(0,52)); continue; }
+    let metin2 = t.kalan, taksit = 1;
+    const tm = metin2.match(/(\d{1,2})\s*taksit(?:li|e)?/i);
+    if(tm){ taksit = parseInt(tm[1],10) || 1; metin2 = (metin2.slice(0,tm.index)+metin2.slice(tm.index+tm[0].length)).trim(); }
+    const vi = metin2.indexOf(',');
+    const aciklama = (vi>=0 ? metin2.slice(0,vi) : metin2).trim().replace(/^[-–]\s*/,'');
+    const satici = vi>=0 ? metin2.slice(vi+1).trim().toLocaleLowerCase('tr') : '';
+    kayitlar.push({tarih, kisi:kisi.trim(), tutar:t.tutar, taksit,
+      aciklama: aciklama || (satici||'—'), satici, kategori: kategoriBul(aciklama, satici)});
+  }
+  return {kayitlar, atlanan};
+}
+
+/* ---------- şifreleme ---------- */
+async function anahtar(parola, tuz, izin){
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(parola), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:tuz,iterations:250000,hash:'SHA-256'},
+    km, {name:'AES-GCM',length:256}, false, [izin]);
+}
+async function sifrele(nesne, parola){
+  const tuz = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await anahtar(parola, tuz, 'encrypt');
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(JSON.stringify(nesne)));
+  return {surum:1, tuz:b64(tuz), iv:b64(iv), veri:b64(new Uint8Array(ct))};
+}
+
+/* ---------- durum ---------- */
+let KAYITLAR = null;
+let TAKSITLER = JSON.parse(localStorage.getItem('hd_taksitler') || '[]');
+$('hedef').value = localStorage.getItem('hd_hedef') || '';
+$('token').value = localStorage.getItem('hd_token') || '';
+$('owner').value = localStorage.getItem('hd_owner') || 'ozhankesikbas';
+$('repo').value  = localStorage.getItem('hd_repo')  || 'harcama-rapor';
+$('tBas').value = new Date().toISOString().slice(0,7);
+tkCiz();
+
+$('dosya').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const metin = await f.text();
+  const {kayitlar, atlanan} = ayikla(metin);
+  KAYITLAR = kayitlar;
+  const toplam = kayitlar.reduce((s,k)=>s+k.tutar,0);
+  const aylar = [...new Set(kayitlar.map(k=>k.tarih.slice(0,7)))].sort();
+  const oncekiSayi = +(localStorage.getItem('hd_sonSayi')||0);
+
+  $('rapor').className = 'rapor';
+  $('rapor').innerHTML = `
+    <div class="r"><span>Okunan kayıt</span><b>${kayitlar.length}</b></div>
+    <div class="r"><span>Toplam</span><b>${TL0(toplam)} ₺</b></div>
+    <div class="r"><span>Dönem</span><b>${aylar[0]||'—'} → ${aylar[aylar.length-1]||'—'}</b></div>`;
+
+  let uyarilar = '';
+  if(oncekiSayi && kayitlar.length < oncekiSayi)
+    uyarilar += `<b>Dikkat:</b> geçen yayında ${oncekiSayi} kayıt vardı, şimdi ${kayitlar.length}. Sohbet temizlenmiş olabilir — yine de yayınlarsan eski kayıtlar kaybolur.`;
+  if(atlanan.length)
+    uyarilar += (uyarilar?'<br><br>':'') + `<b>Tutar okunamayan ${atlanan.length} mesaj atlandı:</b><ul>${
+      atlanan.slice(0,6).map(a=>`<li>${a.replace(/</g,'&lt;')}</li>`).join('')}</ul>`;
+  $('atlanan').className = uyarilar ? 'uyari' : 'uyari gizle';
+  $('atlanan').innerHTML = uyarilar;
+
+  const digerler = kayitlar.filter(k=>k.kategori==='Diğer');
+  $('kategorisiz').className = digerler.length ? 'uyari' : 'uyari gizle';
+  $('kategorisiz').innerHTML = digerler.length
+    ? `<b>${digerler.length} kayıt "Diğer"e düştü:</b><ul>${
+      [...new Set(digerler.map(k=>k.aciklama))].slice(0,6).map(a=>`<li>${a.replace(/</g,'&lt;')}</li>`).join('')}</ul>`
+    : '';
+  kontrol();
+});
+
+/* taksitler */
+function tkCiz(){
+  $('tkListe').innerHTML = TAKSITLER.length ? TAKSITLER.map((t,i)=>{
+    const bit = (()=>{ let [y,m]=t.baslangic.split('-').map(Number); m+=t.ayAdedi-1;
+      y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); })();
+    return `<div class="tk"><span class="ad">${t.ad}</span>
+      <span class="mono" style="font-size:.8rem;color:var(--sis)">${t.baslangic}→${bit}</span>
+      <span class="mono" style="font-weight:600">${TL0(t.aylik)} ₺</span>
+      <button class="sil" data-i="${i}" aria-label="Sil">×</button></div>`;
+  }).join('') : '<div style="font-size:.85rem;color:var(--sis)">Kayıtlı taksit yok.</div>';
+  $('tkListe').querySelectorAll('.sil').forEach(b=>b.onclick=()=>{
+    TAKSITLER.splice(+b.dataset.i,1); kaydetTk(); tkCiz();
+  });
+}
+function kaydetTk(){ localStorage.setItem('hd_taksitler', JSON.stringify(TAKSITLER)); }
+$('tEkle').onclick = ()=>{
+  const ad=$('tAd').value.trim(), aylik=+$('tAylik').value, bas=$('tBas').value, adet=+$('tAdet').value;
+  if(!ad || !aylik || !bas || !adet){ alert('Açıklama, aylık tutar, başlangıç ayı ve taksit sayısı gerekli.'); return; }
+  TAKSITLER.push({ad, aylik, baslangic:bas, ayAdedi:adet,
+    kategori:$('tKat').value.trim()||'Taksit', satici:$('tSat').value.trim().toLocaleLowerCase('tr')});
+  kaydetTk(); tkCiz();
+  ['tAd','tAylik','tAdet','tKat','tSat'].forEach(i=>$(i).value='');
+};
+
+/* yayınla */
+function kontrol(){
+  $('yayinla').disabled = !(KAYITLAR && $('parola').value && $('token').value && $('owner').value && $('repo').value);
+}
+['parola','token','owner','repo'].forEach(i=>$(i).addEventListener('input',kontrol));
+
+$('yayinla').onclick = async ()=>{
+  const d = $('durum'); const btn = $('yayinla');
+  btn.disabled = true; d.className='durum'; d.textContent='Şifreleniyor…';
+  try{
+    const paket = await sifrele({
+      guncelleme: new Date().toISOString(),
+      hedef: +$('hedef').value || 0,
+      taksitler: TAKSITLER,
+      kayitlar: KAYITLAR
+    }, $('parola').value);
+
+    const owner=$('owner').value.trim(), repo=$('repo').value.trim(), token=$('token').value.trim();
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/veri.json`;
+    const bas = {Authorization:'Bearer '+token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'};
+
+    d.textContent = 'GitHub kontrol ediliyor…';
+    let sha = null;
+    const g = await fetch(url+'?ref=main', {headers:bas});
+    if(g.ok) sha = (await g.json()).sha;
+    else if(g.status===401 || g.status===403) throw new Error('Token reddedildi. Süresi dolmuş ya da Contents yazma izni yok.');
+    else if(g.status!==404) throw new Error('GitHub yanıtı: '+g.status);
+
+    d.textContent = 'Yükleniyor…';
+    const govde = {message:'harcama verisi '+new Date().toLocaleDateString('tr-TR'), branch:'main',
+      content: b64(new TextEncoder().encode(JSON.stringify(paket)))};
+    if(sha) govde.sha = sha;
+    const p = await fetch(url, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(govde)});
+    if(!p.ok) throw new Error('Yükleme başarısız ('+p.status+'). '+((await p.json().catch(()=>({}))).message||''));
+
+    localStorage.setItem('hd_token',token); localStorage.setItem('hd_owner',owner);
+    localStorage.setItem('hd_repo',repo); localStorage.setItem('hd_hedef',$('hedef').value);
+    localStorage.setItem('hd_sonSayi', KAYITLAR.length);
+    d.className='durum ok';
+    d.innerHTML = `Yayınlandı · ${KAYITLAR.length} kayıt. <a href="https://${owner}.github.io/${repo}/" target="_blank">Paneli aç</a>`;
+  }catch(e){ d.className='durum hata'; d.textContent = e.message || 'Bilinmeyen hata.'; }
+  btn.disabled = false;
+};
+
+/* kurtarma */
+$('getir').onclick = async ()=>{
+  const d=$('durum'); d.className='durum';
+  if(!$('parola').value){ d.className='durum hata'; d.textContent='Önce parolayı gir.'; return; }
+  d.textContent='Getiriliyor…';
+  try{
+    const r = await fetch(`https://${$('owner').value}.github.io/${$('repo').value}/veri.json?t=`+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('Yayında veri yok.');
+    const p = await r.json();
+    const bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+    const key = await anahtar($('parola').value, bin(p.tuz), 'decrypt');
+    const acik = JSON.parse(new TextDecoder().decode(
+      await crypto.subtle.decrypt({name:'AES-GCM',iv:bin(p.iv)}, key, bin(p.veri))));
+    TAKSITLER = acik.taksitler||[]; kaydetTk(); tkCiz();
+    $('hedef').value = acik.hedef||''; localStorage.setItem('hd_hedef',acik.hedef||'');
+    localStorage.setItem('hd_sonSayi', (acik.kayitlar||[]).length);
+    d.className='durum ok'; d.textContent=`Getirildi · hedef ve ${TAKSITLER.length} taksit yüklendi.`;
+  }catch(e){ d.className='durum hata'; d.textContent = e.name==='OperationError' ? 'Parola yanlış.' : (e.message||'Getirilemedi.'); }
+};
+
+$('unut').onclick = ()=>{
+  ['hd_token','hd_owner','hd_repo','hd_hedef','hd_taksitler','hd_sonSayi'].forEach(k=>localStorage.removeItem(k));
+  $('token').value=''; TAKSITLER=[]; tkCiz(); kontrol();
+  $('durum').className='durum'; $('durum').textContent='Bu cihazdaki kayıtlar silindi.';
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9EDE4">
+<title>Hane Defteri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kagit:#E9EDE4; --kart:#F6F8F2; --murekkep:#1B2621; --sis:#5A665F;
+  --erik:#6B2D5C; --altin:#B8862B; --cam:#2F7B72; --cizgi:#CBD3C6;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--kagit); color:var(--murekkep);
+  font-family:"Public Sans",system-ui,sans-serif; font-size:16px; line-height:1.5;
+  padding:0 0 4rem; -webkit-font-smoothing:antialiased;
+}
+.sar{max-width:640px;margin:0 auto;padding:0 1.1rem}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.disp{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;letter-spacing:-.02em}
+.goz{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sis);font-weight:600}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+:focus-visible{outline:2px solid var(--erik);outline-offset:2px;border-radius:4px}
+
+/* kilit */
+#kilit{position:fixed;inset:0;background:var(--kagit);display:flex;align-items:center;justify-content:center;padding:1.5rem;z-index:50}
+#kilit .kutu{width:100%;max-width:330px;text-align:center}
+#kilit h1{font-size:1.9rem;margin:.6rem 0 .3rem}
+#kilit p{color:var(--sis);font-size:.9rem;margin-bottom:1.6rem}
+.alan{display:flex;flex-direction:column;gap:.6rem}
+input[type=password],input[type=text],input[type=number],select{
+  font:inherit;padding:.75rem .9rem;border:1px solid var(--cizgi);border-radius:10px;
+  background:var(--kart);color:var(--murekkep);width:100%
+}
+.btn{background:var(--erik);color:#fff;padding:.78rem 1rem;border-radius:10px;font-weight:600;text-align:center}
+.btn:active{transform:translateY(1px)}
+.hata{color:#9B2226;font-size:.85rem;min-height:1.2em;margin-top:.7rem}
+
+/* başlık */
+header{padding:2.2rem 0 1.4rem}
+.aylar{display:flex;align-items:center;gap:.4rem;margin-bottom:1.1rem}
+.aylar select{width:auto;flex:0 1 auto;padding:.4rem .6rem;font-size:.85rem;border-radius:8px}
+.tutar{font-size:clamp(2.6rem,13vw,3.6rem);font-weight:700;letter-spacing:-.045em;line-height:1;font-family:"JetBrains Mono",monospace}
+.tutar .kurus{font-size:.45em;color:var(--sis);font-weight:500}
+.altbilgi{margin-top:.7rem;font-size:.9rem;color:var(--sis)}
+.altbilgi b{color:var(--murekkep);font-weight:600}
+
+/* hedef çubuğu */
+.hedef{margin-top:1.1rem}
+.ray{height:9px;background:#DDE3D6;border-radius:99px;overflow:hidden;display:flex}
+.ray i{display:block;height:100%}
+.ray .pesin{background:var(--erik)}
+.ray .taksit{background:var(--altin)}
+.imle{position:relative;height:14px;margin-top:2px}
+.imle span{position:absolute;top:0;transform:translateX(-50%);font-size:.62rem;color:var(--sis);white-space:nowrap}
+.imle span::before{content:"";position:absolute;left:50%;top:-4px;width:1px;height:5px;background:var(--sis)}
+.anahtar{display:flex;gap:1rem;margin-top:.8rem;font-size:.78rem;color:var(--sis);flex-wrap:wrap}
+.anahtar i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:.35rem}
+
+/* bölüm */
+section{margin-top:2.3rem}
+.baslik{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.9rem}
+.kart{background:var(--kart);border:1px solid var(--cizgi);border-radius:var(--r);padding:1rem 1.05rem}
+
+/* kategori barları */
+.sira{margin-bottom:.85rem}
+.sira:last-child{margin-bottom:0}
+.sira .ust{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;margin-bottom:.32rem}
+.sira .ad{font-size:.92rem;font-weight:500}
+.sira .rak{font-size:.86rem;font-weight:500}
+.sira .cub{height:6px;background:#DDE3D6;border-radius:99px;overflow:hidden}
+.sira .cub i{display:block;height:100%;background:var(--erik);border-radius:99px}
+
+/* satıcı / defter — imza öğesi */
+.kalem{display:flex;align-items:baseline;gap:.45rem;padding:.42rem 0}
+.kalem+.kalem{border-top:1px solid rgba(203,211,198,.5)}
+.kalem .sol{display:flex;flex-direction:column;min-width:0}
+.kalem .ad{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kalem .meta{font-size:.71rem;color:var(--sis);margin-top:.1rem;display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}
+.kalem .nokta{flex:1;min-width:1.2rem;border-bottom:1px dotted var(--cizgi);transform:translateY(-.22rem)}
+.kalem .rak{font-size:.9rem;font-weight:500;white-space:nowrap}
+.kim{font-weight:600;font-size:.68rem;letter-spacing:.04em;text-transform:uppercase}
+.kim.o{color:var(--erik)} .kim.m{color:var(--cam)}
+.rozet{font-size:.63rem;padding:.08rem .38rem;border-radius:5px;background:rgba(184,134,43,.16);color:#8A6317;font-weight:600;letter-spacing:.02em}
+.eksi{color:var(--cam)}
+
+/* projeksiyon */
+.proj{display:flex;align-items:flex-end;gap:.42rem;height:96px;margin-top:.3rem}
+.proj .sut{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:.3rem}
+.proj .cizgi{width:100%;background:var(--altin);border-radius:4px 4px 0 0;min-height:2px}
+.proj .et{font-size:.63rem;color:var(--sis);text-align:center;line-height:1.25}
+.proj .et b{display:block;color:var(--murekkep);font-weight:600}
+
+/* kişi */
+.ikili{display:flex;gap:.7rem}
+.ikili>div{flex:1;background:var(--kart);border:1px solid var(--cizgi);border-radius:var(--r);padding:.85rem .9rem}
+.ikili .n{font-size:1.15rem;font-weight:600;margin-top:.25rem}
+
+/* kurallar */
+details{background:var(--kart);border:1px solid var(--cizgi);border-radius:var(--r);padding:.9rem 1.05rem}
+summary{font-weight:600;cursor:pointer;font-size:.94rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:var(--sis);font-weight:400}
+details[open] summary::after{content:"−"}
+details .ic{margin-top:.9rem;font-size:.88rem;color:var(--sis);line-height:1.65}
+details code{font-family:"JetBrains Mono",monospace;font-size:.85em;background:#E4E9DE;padding:.1rem .34rem;border-radius:5px;color:var(--murekkep)}
+details .ic p{margin-bottom:.6rem}
+details .ic p:last-child{margin-bottom:0}
+
+.bos{text-align:center;color:var(--sis);padding:2.5rem 1rem;font-size:.92rem}
+footer{margin-top:2.6rem;font-size:.72rem;color:var(--sis);text-align:center}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="kilit">
+  <div class="kutu">
+    <div class="goz">Kesikbaş hanesi</div>
+    <h1 class="disp">Hane Defteri</h1>
+    <p>Devam etmek için parolayı gir.</p>
+    <div class="alan">
+      <input type="password" id="parola" placeholder="Parola" autocomplete="current-password" enterkeyhint="go">
+      <button class="btn" id="ac">Aç</button>
+    </div>
+    <div class="hata" id="kilitHata"></div>
+  </div>
+</div>
+
+<main class="sar" id="panel" hidden>
+  <header>
+    <div class="aylar">
+      <span class="goz">Dönem</span>
+      <select id="aySec" aria-label="Ay seç"></select>
+    </div>
+    <div class="tutar" id="ayToplam">0</div>
+    <div class="altbilgi" id="ozet"></div>
+    <div class="hedef">
+      <div class="ray"><i class="pesin" id="rayPesin"></i><i class="taksit" id="rayTaksit"></i></div>
+      <div class="imle" id="imle"></div>
+      <div class="anahtar">
+        <span><i style="background:var(--erik)"></i>Peşin</span>
+        <span><i style="background:var(--altin)"></i>Taksit</span>
+        <span id="hedefEt"></span>
+      </div>
+    </div>
+  </header>
+
+  <section id="bolKategori">
+    <div class="baslik"><span class="goz">Nereye gitti</span><span class="goz" id="katSayi"></span></div>
+    <div class="kart" id="kategoriler"></div>
+  </section>
+
+  <section id="bolSatici">
+    <div class="baslik"><span class="goz">Nereden alındı</span></div>
+    <div class="kart" id="saticilar"></div>
+  </section>
+
+  <section id="bolProj">
+    <div class="baslik"><span class="goz">Taksit yükü</span><span class="goz">önümüzdeki 6 ay</span></div>
+    <div class="kart"><div class="proj" id="proj"></div></div>
+  </section>
+
+  <section>
+    <div class="baslik"><span class="goz">Kim harcadı</span></div>
+    <div class="ikili" id="kisiler"></div>
+  </section>
+
+  <section id="bolTrend">
+    <div class="baslik"><span class="goz">Aylık seyir</span></div>
+    <div class="kart" id="trend"></div>
+  </section>
+
+  <section>
+    <div class="baslik"><span class="goz">Kayıtlar</span><span class="goz" id="kayitSayi"></span></div>
+    <div class="kart" id="defter"></div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Harcama nasıl yazılır</summary>
+      <div class="ic">
+        <p><b>Tutar önce, açıklama sonra.</b> <code>1070₺ market</code></p>
+        <p><b>Satıcıyı virgülle ekle.</b> <code>689₺ yüz temizleme jeli, trendyol</code></p>
+        <p><b>Taksitliyse toplam tutarı yaz.</b> <code>12000₺ 6 taksit buzdolabı, teknosa</code> — panel aylara kendi böler.</p>
+        <p><b>İade gelirse eksi yaz.</b> <code>-689₺ jel iadesi, trendyol</code></p>
+        <p>Her mesajda tek harcama olsun. <code>₺</code> yerine <code>tl</code> yazmak da olur.</p>
+      </div>
+    </details>
+  </section>
+
+  <footer id="dipnot"></footer>
+</main>
+
+<script>
+const TL = n => n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const TL0 = n => Math.round(n).toLocaleString('tr-TR');
+const AYAD = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const etiketAy = k => { const [y,m]=k.split('-'); return AYAD[+m-1]+' '+y; };
+const kisaAy = k => { const [y,m]=k.split('-'); return AYAD[+m-1].slice(0,3); };
+const b64bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+
+async function anahtarTuret(parola, tuz){
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(parola), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:tuz,iterations:250000,hash:'SHA-256'},
+    km, {name:'AES-GCM',length:256}, false, ['decrypt']);
+}
+
+let VERI=null, AYLAR=[];
+
+document.getElementById('ac').addEventListener('click', ac);
+document.getElementById('parola').addEventListener('keydown', e=>{ if(e.key==='Enter') ac(); });
+
+const kayitli = sessionStorage.getItem('hd_parola');
+if(kayitli){ document.getElementById('parola').value = kayitli; ac(); }
+
+async function ac(){
+  const p = document.getElementById('parola').value;
+  const h = document.getElementById('kilitHata');
+  if(!p){ h.textContent='Parola boş.'; return; }
+  h.textContent='Açılıyor…';
+  let paket;
+  try{
+    const r = await fetch('veri.json?t='+Date.now(), {cache:'no-store'});
+    if(r.status===404){ h.textContent='Henüz veri yayınlanmadı.'; return; }
+    if(!r.ok) throw 0;
+    paket = await r.json();
+  }catch(e){ h.textContent='Veri okunamadı. Bağlantını kontrol et.'; return; }
+  try{
+    const key = await anahtarTuret(p, b64bin(paket.tuz));
+    const acik = await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bin(paket.iv)}, key, b64bin(paket.veri));
+    VERI = JSON.parse(new TextDecoder().decode(acik));
+  }catch(e){ h.textContent='Parola yanlış.'; return; }
+  sessionStorage.setItem('hd_parola', p);
+  document.getElementById('kilit').remove();
+  document.getElementById('panel').hidden = false;
+  kur();
+}
+
+/* --- aylık dilimleme --- */
+function dilimler(){
+  const d = {}; // ay -> {pesin, taksit, kalemler:[]}
+  const ekle = (ay,tur,tutar,kalem) => {
+    (d[ay] = d[ay] || {pesin:0,taksit:0,kalemler:[]});
+    d[ay][tur] += tutar;
+    if(kalem) d[ay].kalemler.push(kalem);
+  };
+  const ayEkle = (ay,n) => { let [y,m]=ay.split('-').map(Number); m+=n; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); };
+
+  for(const k of VERI.kayitlar||[]){
+    const ay = k.tarih.slice(0,7);
+    if(k.taksit && k.taksit>1){
+      const par = k.tutar/k.taksit;
+      for(let i=0;i<k.taksit;i++)
+        ekle(ayEkle(ay,i),'taksit',par,{...k,tutar:par,dilim:i+1});
+    } else ekle(ay,'pesin',k.tutar,k);
+  }
+  for(const t of VERI.taksitler||[]){
+    for(let i=0;i<t.ayAdedi;i++){
+      const ay = ayEkle(t.baslangic,i);
+      ekle(ay,'taksit',t.aylik,{tarih:ay+'-01',aciklama:t.ad,satici:t.satici||'',kategori:t.kategori||'Diğer',
+        kisi:t.kisi||'',tutar:t.aylik,taksit:t.ayAdedi,dilim:i+1,surekli:true});
+    }
+  }
+  return d;
+}
+
+function kur(){
+  const d = dilimler();
+  AYLAR = Object.keys(d).sort();
+  const bugun = new Date().toISOString().slice(0,7);
+  const sec = document.getElementById('aySec');
+  sec.innerHTML = AYLAR.map(a=>`<option value="${a}">${etiketAy(a)}</option>`).join('');
+  sec.value = AYLAR.includes(bugun) ? bugun : AYLAR[AYLAR.length-1];
+  sec.addEventListener('change', ()=>ciz(d, sec.value));
+  ciz(d, sec.value);
+  const g = VERI.guncelleme ? new Date(VERI.guncelleme) : null;
+  document.getElementById('dipnot').textContent = g ? 'Son güncelleme ' + g.toLocaleString('tr-TR',{day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'}) : '';
+}
+
+function ciz(d, ay){
+  const a = d[ay] || {pesin:0,taksit:0,kalemler:[]};
+  const toplam = a.pesin + a.taksit;
+  const hedef = VERI.hedef || 0;
+
+  const [tam,kur] = TL(toplam).split(',');
+  document.getElementById('ayToplam').innerHTML = tam + '<span class="kurus">,'+kur+' ₺</span>';
+
+  /* ay ilerlemesi */
+  const bugun = new Date(), buAy = bugun.toISOString().slice(0,7);
+  const [yy,mm] = ay.split('-').map(Number);
+  const gunSayisi = new Date(yy,mm,0).getDate();
+  const gecen = ay===buAy ? bugun.getDate() : (ay<buAy ? gunSayisi : 0);
+  const oran = hedef ? toplam/hedef : 0;
+
+  let ozet = `<b>${a.kalemler.length}</b> kayıt`;
+  if(a.taksit>0) ozet += ` · taksit payı <b>${TL0(a.taksit)} ₺</b>`;
+  if(hedef && ay===buAy) ozet += ` · ayın <b>${Math.round(gecen/gunSayisi*100)}%</b>'i geçti`;
+  document.getElementById('ozet').innerHTML = ozet;
+
+  const yuz = v => Math.max(0, Math.min(100, hedef ? v/hedef*100 : (toplam? v/toplam*100:0)));
+  document.getElementById('rayPesin').style.width = yuz(a.pesin)+'%';
+  document.getElementById('rayTaksit').style.width = yuz(a.taksit)+'%';
+  document.getElementById('imle').innerHTML = (hedef && ay===buAy)
+    ? `<span style="left:${Math.min(97,gecen/gunSayisi*100)}%">bugün</span>` : '';
+  document.getElementById('hedefEt').textContent = hedef
+    ? (toplam<=hedef ? `Hedefin %${Math.round(oran*100)}'i · ${TL0(hedef-toplam)} ₺ kaldı`
+                     : `Hedefi ${TL0(toplam-hedef)} ₺ aştı`)
+    : 'Hedef belirlenmedi';
+  document.getElementById('hedefEt').style.color = (hedef && toplam>hedef) ? '#9B2226' : '';
+
+  /* kategoriler */
+  const grup = (arr,alan) => {
+    const m = {};
+    for(const k of arr){ const ad = (k[alan]||'').trim() || '—'; m[ad]=(m[ad]||0)+k.tutar; }
+    return Object.entries(m).filter(x=>x[1]!==0).sort((x,y)=>y[1]-x[1]);
+  };
+  const kats = grup(a.kalemler,'kategori');
+  const enb = kats.length ? Math.abs(kats[0][1]) : 1;
+  document.getElementById('katSayi').textContent = kats.length + ' başlık';
+  document.getElementById('kategoriler').innerHTML = kats.length ? kats.map(([ad,v])=>`
+    <div class="sira">
+      <div class="ust"><span class="ad">${esc(ad)}</span><span class="rak mono">${TL0(v)} ₺</span></div>
+      <div class="cub"><i style="width:${Math.abs(v)/enb*100}%"></i></div>
+    </div>`).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
+
+  /* satıcılar */
+  const sat = grup(a.kalemler.filter(k=>k.satici),'satici').slice(0,10);
+  document.getElementById('bolSatici').hidden = !sat.length;
+  document.getElementById('saticilar').innerHTML = sat.map(([ad,v])=>`
+    <div class="kalem"><div class="sol"><span class="ad">${esc(ad)}</span></div>
+    <span class="nokta"></span><span class="rak mono">${TL0(v)} ₺</span></div>`).join('');
+
+  /* projeksiyon */
+  const ayEkle = (k,n)=>{ let [y,m]=k.split('-').map(Number); m+=n; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); };
+  const ileri = Array.from({length:6},(_,i)=>{ const k=ayEkle(buAy,i); return [k,(d[k]||{taksit:0}).taksit]; });
+  const pmax = Math.max(...ileri.map(x=>x[1]),1);
+  document.getElementById('bolProj').hidden = !ileri.some(x=>x[1]>0);
+  document.getElementById('proj').innerHTML = ileri.map(([k,v])=>`
+    <div class="sut"><div class="cizgi" style="height:${v/pmax*68}px;opacity:${v?1:.25}"></div>
+    <div class="et"><b class="mono">${v?TL0(v):'—'}</b>${kisaAy(k)}</div></div>`).join('');
+
+  /* kişiler */
+  const kisi = {};
+  for(const k of a.kalemler){ if(!k.kisi) continue; kisi[k.kisi]=(kisi[k.kisi]||0)+k.tutar; }
+  const kl = Object.entries(kisi).sort((x,y)=>y[1]-x[1]);
+  document.getElementById('kisiler').innerHTML = kl.length ? kl.map(([ad,v],i)=>`
+    <div><span class="goz">${esc(ad.split(' ')[0])}</span>
+    <div class="n mono" style="color:${i===0?'var(--erik)':'var(--cam)'}">${TL0(v)} ₺</div></div>`).join('')
+    : '<div class="bos" style="flex:1">Kişi bilgisi yok.</div>';
+
+  /* trend */
+  const son = AYLAR.slice(-8);
+  const tmax = Math.max(...son.map(k=>(d[k].pesin+d[k].taksit)),1);
+  document.getElementById('trend').innerHTML = son.map(k=>{
+    const v = d[k].pesin+d[k].taksit;
+    return `<div class="sira"><div class="ust"><span class="ad" style="${k===ay?'font-weight:600':'opacity:.75'}">${etiketAy(k)}</span>
+    <span class="rak mono">${TL0(v)} ₺</span></div>
+    <div class="cub"><i style="width:${v/tmax*100}%;background:${k===ay?'var(--erik)':'#B7C2B2'}"></i></div></div>`;
+  }).join('');
+
+  /* defter */
+  const kls = [...a.kalemler].sort((x,y)=> y.tarih.localeCompare(x.tarih) || Math.abs(y.tutar)-Math.abs(x.tutar));
+  document.getElementById('kayitSayi').textContent = kls.length + ' kalem';
+  document.getElementById('defter').innerHTML = kls.length ? kls.map(k=>{
+    const g = k.tarih.slice(8,10)+'.'+k.tarih.slice(5,7);
+    const kim = k.kisi ? `<span class="kim ${k.kisi.toLowerCase().startsWith('m')?'m':'o'}">${esc(k.kisi.split(' ')[0])}</span>` : '';
+    const roz = k.taksit>1 ? `<span class="rozet">${k.dilim}/${k.taksit} taksit</span>` : '';
+    return `<div class="kalem">
+      <div class="sol"><span class="ad">${esc(k.aciklama||'—')}</span>
+      <span class="meta"><span class="mono">${g}</span>${kim}${k.satici?'<span>'+esc(k.satici)+'</span>':''}${roz}</span></div>
+      <span class="nokta"></span>
+      <span class="rak mono ${k.tutar<0?'eksi':''}">${k.tutar<0?'':''}${TL(k.tutar)} ₺</span></div>`;
+  }).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+</script>
+</body>
+</html>
