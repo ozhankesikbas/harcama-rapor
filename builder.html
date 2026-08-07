@@ -157,6 +157,7 @@ const TL0 = n => Math.round(n).toLocaleString('tr-TR');
 const kucuk = s => s.toLocaleLowerCase('tr').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g')
   .replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/â/g,'a');
 const b64 = u8 => btoa(String.fromCharCode(...u8));
+function hashId(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
 
 function sayiCoz(s){
   s = s.trim();
@@ -214,8 +215,10 @@ function ayikla(metin){
     const vi = metin2.indexOf(',');
     const aciklama = (vi>=0 ? metin2.slice(0,vi) : metin2).trim().replace(/^[-–]\s*/,'');
     const satici = vi>=0 ? metin2.slice(vi+1).trim().toLocaleLowerCase('tr') : '';
-    kayitlar.push({tarih, kisi:kisi.trim(), tutar:t.tutar, taksit,
-      aciklama: aciklama || (satici||'—'), satici, kategori: kategoriBul(aciklama, satici)});
+    const kayit = {tarih, kisi:kisi.trim(), tutar:t.tutar, taksit,
+      aciklama: aciklama || (satici||'—'), satici, kategori: kategoriBul(aciklama, satici)};
+    kayit.id = hashId([kayit.tarih,kayit.kisi,kayit.tutar,kayit.aciklama,kayit.satici].join('|'));
+    kayitlar.push(kayit);
   }
   return {kayitlar, atlanan};
 }
@@ -296,7 +299,8 @@ $('tEkle').onclick = ()=>{
   const ad=$('tAd').value.trim(), aylik=+$('tAylik').value, bas=$('tBas').value, adet=+$('tAdet').value;
   if(!ad || !aylik || !bas || !adet){ alert('Açıklama, aylık tutar, başlangıç ayı ve taksit sayısı gerekli.'); return; }
   TAKSITLER.push({ad, aylik, baslangic:bas, ayAdedi:adet,
-    kategori:$('tKat').value.trim()||'Taksit', satici:$('tSat').value.trim().toLocaleLowerCase('tr')});
+    kategori:$('tKat').value.trim()||'Taksit', satici:$('tSat').value.trim().toLocaleLowerCase('tr'),
+    id: hashId(['T',ad,aylik,bas,adet].join('|'))});
   kaydetTk(); tkCiz();
   ['tAd','tAylik','tAdet','tKat','tSat'].forEach(i=>$(i).value='');
 };
@@ -309,25 +313,41 @@ function kontrol(){
 
 $('yayinla').onclick = async ()=>{
   const d = $('durum'); const btn = $('yayinla');
-  btn.disabled = true; d.className='durum'; d.textContent='Şifreleniyor…';
+  btn.disabled = true; d.className='durum';
+
+  const owner=$('owner').value.trim(), repo=$('repo').value.trim(), token=$('token').value.trim(), parola=$('parola').value;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/veri.json`;
+  const bas = {Authorization:'Bearer '+token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'};
+
   try{
+    d.textContent = 'GitHub kontrol ediliyor…';
+    let sha = null;
+    const g = await fetch(url+'?ref=main', {headers:bas});
+    if(g.ok){
+      const gj = await g.json();
+      sha = gj.sha;
+      try{
+        const eski = JSON.parse(atob(gj.content.replace(/\n/g,'')));
+        const bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+        const eskiKey = await anahtar(parola, bin(eski.tuz), 'decrypt');
+        const eskiVeri = JSON.parse(new TextDecoder().decode(
+          await crypto.subtle.decrypt({name:'AES-GCM',iv:bin(eski.iv)}, eskiKey, bin(eski.veri))));
+        const katMap = {};
+        for(const k of [...(eskiVeri.kayitlar||[]), ...(eskiVeri.taksitler||[])]) if(k.id) katMap[k.id] = k.kategori;
+        for(const k of KAYITLAR) if(katMap[k.id]!==undefined) k.kategori = katMap[k.id];
+        for(const t of TAKSITLER) if(katMap[t.id]!==undefined) t.kategori = katMap[t.id];
+      }catch(e){ /* eski veri okunamadı (ilk yayın ya da parola değişmiş) — sorun değil */ }
+    }
+    else if(g.status===401 || g.status===403) throw new Error('Token reddedildi. Süresi dolmuş ya da Contents yazma izni yok.');
+    else if(g.status!==404) throw new Error('GitHub yanıtı: '+g.status);
+
+    d.textContent = 'Şifreleniyor…';
     const paket = await sifrele({
       guncelleme: new Date().toISOString(),
       hedef: +$('hedef').value || 0,
       taksitler: TAKSITLER,
       kayitlar: KAYITLAR
-    }, $('parola').value);
-
-    const owner=$('owner').value.trim(), repo=$('repo').value.trim(), token=$('token').value.trim();
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/veri.json`;
-    const bas = {Authorization:'Bearer '+token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'};
-
-    d.textContent = 'GitHub kontrol ediliyor…';
-    let sha = null;
-    const g = await fetch(url+'?ref=main', {headers:bas});
-    if(g.ok) sha = (await g.json()).sha;
-    else if(g.status===401 || g.status===403) throw new Error('Token reddedildi. Süresi dolmuş ya da Contents yazma izni yok.');
-    else if(g.status!==404) throw new Error('GitHub yanıtı: '+g.status);
+    }, parola);
 
     d.textContent = 'Yükleniyor…';
     const govde = {message:'harcama verisi '+new Date().toLocaleDateString('tr-TR'), branch:'main',

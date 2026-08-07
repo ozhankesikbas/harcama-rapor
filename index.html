@@ -178,8 +178,24 @@ footer{margin-top:2.6rem;font-size:.72rem;color:var(--sis);text-align:center}
   </section>
 
   <section>
-    <div class="baslik"><span class="goz">Kayıtlar</span><span class="goz" id="kayitSayi"></span></div>
+    <div class="baslik">
+      <span class="goz">Kayıtlar</span>
+      <span style="display:flex;align-items:center;gap:.7rem">
+        <span class="goz" id="kayitSayi"></span>
+        <button class="goz" id="duzenleBtn" style="text-decoration:underline">Düzenle</button>
+      </span>
+    </div>
     <div class="kart" id="defter"></div>
+    <div id="yayinPaneli" class="kart" style="margin-top:.7rem;display:none">
+      <div class="goz" style="margin-bottom:.6rem">Değişiklikleri yayınla</div>
+      <div class="alan">
+        <input type="text" id="ghOwner" placeholder="GitHub kullanıcı">
+        <input type="text" id="ghRepo" placeholder="Repo">
+        <input type="password" id="ghToken" placeholder="Token" autocomplete="off">
+        <button class="btn" id="yayinlaBtn">Kaydet ve Yayınla</button>
+      </div>
+      <div class="hata" id="yayinDurum" style="min-height:auto"></div>
+    </div>
   </section>
 
   <section>
@@ -205,17 +221,89 @@ const AYAD = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağust
 const etiketAy = k => { const [y,m]=k.split('-'); return AYAD[+m-1]+' '+y; };
 const kisaAy = k => { const [y,m]=k.split('-'); return AYAD[+m-1].slice(0,3); };
 const b64bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+function hashId(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
+const KATEGORILER = ['Market','Atıştırmalık','Dışarıda yemek','Ev & yapı','Sağlık','Araç','Kişisel bakım','Giyim','Elektronik','Fatura & abonelik','Ulaşım','Eğlence & hediye','Taksit','Diğer'];
 
-async function anahtarTuret(parola, tuz){
+async function anahtar(parola, tuz, izin){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(parola), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey({name:'PBKDF2',salt:tuz,iterations:250000,hash:'SHA-256'},
-    km, {name:'AES-GCM',length:256}, false, ['decrypt']);
+    km, {name:'AES-GCM',length:256}, false, [izin]);
+}
+async function sifrele(nesne, parola){
+  const tuz = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await anahtar(parola, tuz, 'encrypt');
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(JSON.stringify(nesne)));
+  return {surum:1, tuz:b64(tuz), iv:b64(iv), veri:b64(new Uint8Array(ct))};
 }
 
-let VERI=null, AYLAR=[];
+let VERI=null, AYLAR=[], PAROLA='', SON_D=null, DUZENLEMELER={}, DUZENLE_AKTIF=false;
 
 document.getElementById('ac').addEventListener('click', ac);
 document.getElementById('parola').addEventListener('keydown', e=>{ if(e.key==='Enter') ac(); });
+
+document.getElementById('duzenleBtn').addEventListener('click', ()=>{
+  DUZENLE_AKTIF = !DUZENLE_AKTIF;
+  document.getElementById('duzenleBtn').textContent = DUZENLE_AKTIF ? 'Bitir' : 'Düzenle';
+  if(SON_D) ciz(SON_D, document.getElementById('aySec').value);
+});
+document.getElementById('defter').addEventListener('change', e=>{
+  if(!e.target.classList.contains('katSec')) return;
+  DUZENLEMELER[e.target.dataset.id] = e.target.value;
+  guncelleYayinPaneli();
+});
+function guncelleYayinPaneli(){
+  const panel = document.getElementById('yayinPaneli');
+  const varMi = Object.keys(DUZENLEMELER).length>0;
+  panel.style.display = varMi ? 'block' : 'none';
+  if(varMi){
+    const o=document.getElementById('ghOwner'), r=document.getElementById('ghRepo'), t=document.getElementById('ghToken');
+    if(!o.value) o.value = localStorage.getItem('hd_owner')||'';
+    if(!r.value) r.value = localStorage.getItem('hd_repo')||'';
+    if(!t.value) t.value = localStorage.getItem('hd_token')||'';
+  }
+}
+document.getElementById('yayinlaBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('yayinlaBtn');
+  const durum = document.getElementById('yayinDurum');
+  const owner = document.getElementById('ghOwner').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const token = document.getElementById('ghToken').value.trim();
+  if(!owner||!repo||!token){ durum.style.color='#9B2226'; durum.textContent='Kullanıcı, repo ve token gerekli.'; return; }
+  btn.disabled = true; durum.style.color=''; durum.textContent = 'Uygulanıyor…';
+  try{
+    for(const k of VERI.kayitlar||[]) if(DUZENLEMELER[k.id]!==undefined) k.kategori = DUZENLEMELER[k.id];
+    for(const t of VERI.taksitler||[]) if(DUZENLEMELER[t.id]!==undefined) t.kategori = DUZENLEMELER[t.id];
+    VERI.guncelleme = new Date().toISOString();
+
+    durum.textContent = 'Şifreleniyor…';
+    const paket = await sifrele(VERI, PAROLA);
+
+    const bas = {Authorization:'Bearer '+token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'};
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/veri.json`;
+    durum.textContent = 'GitHub kontrol ediliyor…';
+    let sha = null;
+    const g = await fetch(url+'?ref=main', {headers:bas});
+    if(g.ok) sha = (await g.json()).sha;
+    else if(g.status===401 || g.status===403) throw new Error('Token reddedildi. Süresi dolmuş ya da Contents yazma izni yok.');
+    else if(g.status!==404) throw new Error('GitHub yanıtı: '+g.status);
+
+    durum.textContent = 'Yükleniyor…';
+    const govde = {message:'kategori güncelleme '+new Date().toLocaleDateString('tr-TR'), branch:'main',
+      content: b64(new TextEncoder().encode(JSON.stringify(paket)))};
+    if(sha) govde.sha = sha;
+    const p = await fetch(url, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(govde)});
+    if(!p.ok) throw new Error('Yükleme başarısız ('+p.status+'). '+((await p.json().catch(()=>({}))).message||''));
+
+    localStorage.setItem('hd_owner',owner); localStorage.setItem('hd_repo',repo); localStorage.setItem('hd_token',token);
+    DUZENLEMELER = {};
+    durum.style.color = 'var(--cam)'; durum.textContent = 'Yayınlandı.';
+    document.getElementById('yayinPaneli').style.display = 'none';
+    kur();
+  }catch(e){ durum.style.color='#9B2226'; durum.textContent = e.message || 'Bilinmeyen hata.'; }
+  btn.disabled = false;
+});
 
 const kayitli = sessionStorage.getItem('hd_parola');
 if(kayitli){ document.getElementById('parola').value = kayitli; ac(); }
@@ -233,10 +321,11 @@ async function ac(){
     paket = await r.json();
   }catch(e){ h.textContent='Veri okunamadı. Bağlantını kontrol et.'; return; }
   try{
-    const key = await anahtarTuret(p, b64bin(paket.tuz));
+    const key = await anahtar(p, b64bin(paket.tuz), 'decrypt');
     const acik = await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bin(paket.iv)}, key, b64bin(paket.veri));
     VERI = JSON.parse(new TextDecoder().decode(acik));
   }catch(e){ h.textContent='Parola yanlış.'; return; }
+  PAROLA = p;
   sessionStorage.setItem('hd_parola', p);
   document.getElementById('kilit').remove();
   document.getElementById('panel').hidden = false;
@@ -254,6 +343,7 @@ function dilimler(){
   const ayEkle = (ay,n) => { let [y,m]=ay.split('-').map(Number); m+=n; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); };
 
   for(const k of VERI.kayitlar||[]){
+    if(!k.id) k.id = hashId([k.tarih,k.kisi,k.tutar,k.aciklama,k.satici].join('|'));
     const ay = k.tarih.slice(0,7);
     if(k.taksit && k.taksit>1){
       const par = k.tutar/k.taksit;
@@ -262,10 +352,11 @@ function dilimler(){
     } else ekle(ay,'pesin',k.tutar,k);
   }
   for(const t of VERI.taksitler||[]){
+    if(!t.id) t.id = hashId(['T',t.ad,t.aylik,t.baslangic,t.ayAdedi].join('|'));
     for(let i=0;i<t.ayAdedi;i++){
       const ay = ayEkle(t.baslangic,i);
       ekle(ay,'taksit',t.aylik,{tarih:ay+'-01',aciklama:t.ad,satici:t.satici||'',kategori:t.kategori||'Diğer',
-        kisi:t.kisi||'',tutar:t.aylik,taksit:t.ayAdedi,dilim:i+1,surekli:true});
+        kisi:t.kisi||'',tutar:t.aylik,taksit:t.ayAdedi,dilim:i+1,surekli:true,id:t.id});
     }
   }
   return d;
@@ -273,13 +364,14 @@ function dilimler(){
 
 function kur(){
   const d = dilimler();
+  SON_D = d;
   AYLAR = Object.keys(d).sort();
   const bugun = new Date().toISOString().slice(0,7);
   const sec = document.getElementById('aySec');
   sec.innerHTML = AYLAR.map(a=>`<option value="${a}">${etiketAy(a)}</option>`).join('');
   sec.value = AYLAR.includes(bugun) ? bugun : AYLAR[AYLAR.length-1];
-  sec.addEventListener('change', ()=>ciz(d, sec.value));
-  ciz(d, sec.value);
+  sec.addEventListener('change', ()=>ciz(SON_D, sec.value));
+  ciz(SON_D, sec.value);
   const g = VERI.guncelleme ? new Date(VERI.guncelleme) : null;
   document.getElementById('dipnot').textContent = g ? 'Son güncelleme ' + g.toLocaleString('tr-TR',{day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'}) : '';
 }
@@ -372,9 +464,13 @@ function ciz(d, ay){
     const g = k.tarih.slice(8,10)+'.'+k.tarih.slice(5,7);
     const kim = k.kisi ? `<span class="kim ${k.kisi.toLowerCase().startsWith('m')?'m':'o'}">${esc(k.kisi.split(' ')[0])}</span>` : '';
     const roz = k.taksit>1 ? `<span class="rozet">${k.dilim}/${k.taksit} taksit</span>` : '';
+    const gKat = DUZENLEMELER[k.id] ?? k.kategori ?? 'Diğer';
+    const katHtml = DUZENLE_AKTIF
+      ? `<select class="katSec" data-id="${k.id}" style="font-size:.68rem;padding:.15rem .35rem;border-radius:5px;width:auto">${KATEGORILER.map(kt=>`<option value="${esc(kt)}" ${kt===gKat?'selected':''}>${esc(kt)}</option>`).join('')}</select>`
+      : `<span>${esc(gKat)}</span>`;
     return `<div class="kalem">
       <div class="sol"><span class="ad">${esc(k.aciklama||'—')}</span>
-      <span class="meta"><span class="mono">${g}</span>${kim}${k.satici?'<span>'+esc(k.satici)+'</span>':''}${roz}</span></div>
+      <span class="meta"><span class="mono">${g}</span>${kim}${k.satici?'<span>'+esc(k.satici)+'</span>':''}${roz}${katHtml}</span></div>
       <span class="nokta"></span>
       <span class="rak mono ${k.tutar<0?'eksi':''}">${k.tutar<0?'':''}${TL(k.tutar)} ₺</span></div>`;
   }).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
