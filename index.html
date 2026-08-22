@@ -251,7 +251,7 @@ const kisaAy = k => { const [y,m]=k.split('-'); return AYAD[+m-1].slice(0,3); };
 const b64bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 const b64 = u8 => btoa(String.fromCharCode(...u8));
 function hashId(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
-const KATEGORILER = ['Market','Atıştırmalık','Dışarıda yemek','Ev & yapı','Sağlık','Araç','Kişisel bakım','Giyim','Elektronik','Fatura & abonelik','Ulaşım','Eğlence & hediye','Taksit','Diğer'];
+const KATEGORILER = ['Market','Atıştırmalık','Dışarıda yemek','Ev & yapı','Sağlık','Araç','Kişisel bakım','Giyim','Elektronik','Fatura & abonelik','Ulaşım','Eğlence & hediye','Seyahat & Vize','Bağış','Taksit','Diğer'];
 
 async function anahtar(parola, tuz, izin){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(parola), 'PBKDF2', false, ['deriveKey']);

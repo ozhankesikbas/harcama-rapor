@@ -137,16 +137,18 @@ a{color:var(--erik)}
 const SOZLUK = {
   'Market':['market','migros','a101','bim','şok','sok','carrefour','macrocenter','getir','bakkal','manav','kasap','ekmek','su','süt','sut','fırın','firin','tarım kredi'],
   'Atıştırmalık':['dondurma','kuruyemiş','kuruyemis','çikolata','cikolata','tatlı','tatli','pasta','baklava','cips','şekerleme'],
-  'Dışarıda yemek':['kahvaltı','kahvalti','restoran','lokanta','cafe','kafe','kahve','bahşiş','bahsis','döner','doner','pizza','burger','yemek','starbucks','çay'],
-  'Ev & yapı':['bauhaus','koçtaş','koctas','ikea','tekzen','madame coco','english home','karaca','mobilya','raf','perde','havlu','nevresim','hırdavat','boya'],
-  'Sağlık':['eczane','hastane','doktor','ilaç','ilac','diş','dis','muayene','vitamin','gözlük','optik'],
-  'Araç':['benzin','mazot','yakıt','yakit','otopark','cam suyu','lastik','hgs','ogs','oto','servis','yıkama','petrol','opet','shell','bp'],
-  'Kişisel bakım':['jel','krem','şampuan','sampuan','kuaför','kuafor','berber','parfüm','parfum','makyaj','sabun','deodorant','cilt'],
-  'Giyim':['giyim','ayakkabı','ayakkabi','elbise','pantolon','gömlek','tişört','mont','çanta','lcw','defacto','koton','zara','mavi'],
+  'Dışarıda yemek':['kahvaltı','kahvalti','restoran','lokanta','cafe','kafe','kahve','bahşiş','bahsis','döner','doner','pizza','burger','yemek','starbucks','çay','tost','içecek','kavurmacı'],
+  'Ev & yapı':['bauhaus','koçtaş','koctas','ikea','tekzen','madame coco','english home','karaca','mobilya','raf','perde','havlu','nevresim','hırdavat','boya','temizlik','çarşaf','ev aksesuar'],
+  'Sağlık':['eczane','hastane','doktor','ilaç','ilac','dişçi','diş hekim','dolgu','muayene','vitamin','gözlük','optik'],
+  'Araç':['benzin','mazot','yakıt','yakit','otopark','cam suyu','cam filmi','cam silecek','araç aksesuar','oto aksesuar','lastik','hgs','ogs','oto','servis','yıkama','petrol','opet','shell','bp'],
+  'Kişisel bakım':['kişisel bakım','jel','krem','şampuan','sampuan','kuaför','kuafor','berber','parfüm','parfum','makyaj','sabun','deodorant','cilt','rossmann'],
+  'Giyim':['giyim','ayakkabı','ayakkabi','elbise','pantolon','gömlek','tişört','mont','çanta','lcw','defacto','koton','zara','mavi','kıyafet','terzi'],
   'Elektronik':['teknosa','vatan','mediamarkt','telefon','laptop','kulaklık','şarj','tablet','bilgisayar','televizyon'],
-  'Fatura & abonelik':['fatura','elektrik','doğalgaz','dogalgaz','internet','aidat','kira','netflix','spotify','abonelik','telefon faturası','vergi','sigorta'],
+  'Fatura & abonelik':['fatura','elektrik','doğalgaz','dogalgaz','internet','aidat','kira','netflix','spotify','abonelik','üyelik','prime','plus','icloud','telefon faturası','vergi','sigorta'],
   'Ulaşım':['taksi','uber','bitaksi','otobüs','metro','bilet','uçak','ucak','tren','kart dolum'],
-  'Eğlence & hediye':['sinema','tiyatro','konser','hediye','oyun','kitap','çiçek','cicek']
+  'Eğlence & hediye':['sinema','tiyatro','konser','hediye','oyun','kitap','çiçek','cicek','halısaha'],
+  'Seyahat & Vize':['vize','vfs','pasaport'],
+  'Bağış':['sadaka','bağış','yardım']
 };
 /* satıcı adı kategori belirlemez (trendyol her şeyi satar) */
 const NOTRSATICI = ['trendyol','hepsiburada','amazon','n11','gittigidiyor','pazarama','çiçeksepeti'];
@@ -186,7 +188,8 @@ const gecer = (metin,k) => {
   return false;
 };
 function kategoriBul(aciklama, satici){
-  const a = kucuk(aciklama);
+  let a = kucuk(aciklama);
+  for(const ns of NOTRSATICI) a = a.split(kucuk(ns)).join(' ');
   for(const {kat,k} of DUZ) if(gecer(a,k)) return kat;
   if(satici && !NOTRSATICI.includes(kucuk(satici))){
     const s = kucuk(satici);
