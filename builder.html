@@ -48,6 +48,13 @@ padding:.7rem .85rem;font-size:.82rem;margin-top:.8rem;line-height:1.55}
 .tk:last-of-type{border:none}
 .tk .ad{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk .sil{color:#9B2226;font-size:1.15rem;line-height:1;padding:.2rem .4rem;flex:none}
+.digerListe{margin-top:.6rem}
+.digerSatir{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid rgba(184,134,43,.3);font-size:.82rem}
+.digerSatir:last-child{border:none}
+.digerSatir .ad{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.digerSatir select{width:auto;padding:.35rem .5rem;font-size:.76rem;border-radius:8px;flex:none}
+.digerSatir.tamam{opacity:.5}
+.digerSatir.tamam .ad::after{content:" ✓";color:var(--cam)}
 .durum{margin-top:1rem;font-size:.88rem;min-height:1.3em;font-weight:500}
 .durum.ok{color:var(--cam)} .durum.hata{color:#9B2226}
 .gizle{display:none}
@@ -160,6 +167,7 @@ const kucuk = s => s.toLocaleLowerCase('tr').replace(/ı/g,'i').replace(/ş/g,'s
   .replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/â/g,'a');
 const b64 = u8 => btoa(String.fromCharCode(...u8));
 function hashId(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function sayiCoz(s){
   s = s.trim();
@@ -188,7 +196,10 @@ const gecer = (metin,k) => {
   return false;
 };
 function kategoriBul(aciklama, satici){
-  let a = kucuk(aciklama);
+  const a0 = kucuk(aciklama);
+  const tam = KURALLAR.find(r => kucuk(r.ifade) === a0);
+  if(tam) return tam.kategori;
+  let a = a0;
   for(const ns of NOTRSATICI) a = a.split(kucuk(ns)).join(' ');
   for(const {kat,k} of DUZ) if(gecer(a,k)) return kat;
   if(satici && !NOTRSATICI.includes(kucuk(satici))){
@@ -197,6 +208,41 @@ function kategoriBul(aciklama, satici){
   }
   return 'Diğer';
 }
+
+/* ---------- dış kaynak kategori kuralları (kategori-kurallari.txt) ---------- */
+const KATEGORI_LISTESI = [...Object.keys(SOZLUK), 'Diğer'];
+let KURALLAR = []; // [{ifade, kategori}] — ifade orijinal haliyle, kucuk() ile eşleştirilir
+let YENI_KURALLAR = {}; // kucuk(ifade) -> {ifade, kategori} — bu oturumda elle atananlar
+
+function kurallariCoz(metin){
+  const liste = [];
+  let mevcutKat = null;
+  for(const satir of metin.split(/\r?\n/)){
+    const s = satir.trim();
+    if(!s) continue;
+    if(s.startsWith('#')){ mevcutKat = s.slice(1).trim(); continue; }
+    if(mevcutKat) liste.push({ifade:s, kategori:mevcutKat});
+  }
+  return liste;
+}
+function kurallariBirlestir(){
+  const harita = {};
+  for(const r of KURALLAR) harita[kucuk(r.ifade)] = r;
+  for(const k in YENI_KURALLAR) harita[k] = YENI_KURALLAR[k];
+  return Object.values(harita);
+}
+function kurallariYaz(liste){
+  const gruplar = {};
+  for(const r of liste) (gruplar[r.kategori] = gruplar[r.kategori] || []).push(r.ifade);
+  const katSirasi = [...new Set([...KATEGORI_LISTESI, ...Object.keys(gruplar)])].filter(k=>gruplar[k]);
+  return katSirasi.map(kat => `#${kat}\n${gruplar[kat].sort((a,b)=>a.localeCompare(b,'tr')).join('\n')}`).join('\n\n') + '\n';
+}
+const KURALLAR_HAZIR = (async () => {
+  try{
+    const r = await fetch('kategori-kurallari.txt?t='+Date.now(), {cache:'no-store'});
+    if(r.ok) KURALLAR = kurallariCoz(await r.text());
+  }catch(e){ /* dosya yoksa boş başla */ }
+})();
 
 const SATIR = /^\[?\s*(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})[,]?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*\]?\s*(?:-\s*)?([^:]{1,64}):\s*([\s\S]*)$/;
 const SISTEM = /(şifreli|sifreli|bu mesaj(?:ı)? (?:silindi|sildiniz)|oluşturdunuz|olusturdunuz|değiştirdiniz|degistirdiniz|ekledi|ayrıldı|ayrildi|çıkardı|cikardi|katıldı|katildi|güvenlik kodu|görüntülü|sesli arama)/i;
@@ -254,6 +300,8 @@ tkCiz();
 
 $('dosya').addEventListener('change', async e=>{
   const f = e.target.files[0]; if(!f) return;
+  await KURALLAR_HAZIR;
+  YENI_KURALLAR = {};
   const metin = await f.text();
   const {kayitlar, atlanan} = ayikla(metin);
   KAYITLAR = kayitlar;
@@ -277,12 +325,27 @@ $('dosya').addEventListener('change', async e=>{
   $('atlanan').innerHTML = uyarilar;
 
   const digerler = kayitlar.filter(k=>k.kategori==='Diğer');
-  $('kategorisiz').className = digerler.length ? 'uyari' : 'uyari gizle';
-  $('kategorisiz').innerHTML = digerler.length
-    ? `<b>${digerler.length} kayıt "Diğer"e düştü:</b><ul>${
-      [...new Set(digerler.map(k=>k.aciklama))].slice(0,6).map(a=>`<li>${a.replace(/</g,'&lt;')}</li>`).join('')}</ul>`
-    : '';
+  const digerIfadeler = [...new Set(digerler.map(k=>k.aciklama))];
+  $('kategorisiz').className = digerIfadeler.length ? 'uyari' : 'uyari gizle';
+  $('kategorisiz').innerHTML = digerIfadeler.length ? `<b>${digerIfadeler.length} ifade "Diğer"e düştü — hızlıca kategorize et:</b>
+    <div class="digerListe">${digerIfadeler.map(ifade => `
+      <div class="digerSatir">
+        <span class="ad">${esc(ifade)}</span>
+        <select data-ifade="${esc(ifade)}" class="digerSec">
+          <option value="">—</option>
+          ${KATEGORI_LISTESI.map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join('')}
+        </select>
+      </div>`).join('')}</div>` : '';
   kontrol();
+});
+
+$('kategorisiz').addEventListener('change', e=>{
+  if(!e.target.classList.contains('digerSec')) return;
+  const ifade = e.target.dataset.ifade, kategori = e.target.value;
+  if(!kategori) return;
+  YENI_KURALLAR[kucuk(ifade)] = {ifade, kategori};
+  for(const k of KAYITLAR) if(k.aciklama === ifade) k.kategori = kategori;
+  e.target.closest('.digerSatir')?.classList.add('tamam');
 });
 
 /* taksitler */
@@ -360,6 +423,21 @@ $('yayinla').onclick = async ()=>{
     if(sha) govde.sha = sha;
     const p = await fetch(url, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(govde)});
     if(!p.ok) throw new Error('Yükleme başarısız ('+p.status+'). '+((await p.json().catch(()=>({}))).message||''));
+
+    if(Object.keys(YENI_KURALLAR).length){
+      d.textContent = 'Kategori kuralları güncelleniyor…';
+      const kUrl = `https://api.github.com/repos/${owner}/${repo}/contents/kategori-kurallari.txt`;
+      let kSha = null;
+      const kg = await fetch(kUrl+'?ref=main', {headers:bas});
+      if(kg.ok) kSha = (await kg.json()).sha;
+      const yeniListe = kurallariBirlestir();
+      const kGovde = {message:'kategori kuralları güncelleme '+new Date().toLocaleDateString('tr-TR'), branch:'main',
+        content: b64(new TextEncoder().encode(kurallariYaz(yeniListe)))};
+      if(kSha) kGovde.sha = kSha;
+      const kp = await fetch(kUrl, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(kGovde)});
+      if(!kp.ok) throw new Error('Kategori kuralları yüklenemedi ('+kp.status+').');
+      KURALLAR = yeniListe; YENI_KURALLAR = {};
+    }
 
     localStorage.setItem('hd_token',token); localStorage.setItem('hd_owner',owner);
     localStorage.setItem('hd_repo',repo); localStorage.setItem('hd_hedef',$('hedef').value);
