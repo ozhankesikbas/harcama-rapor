@@ -196,7 +196,8 @@ function kategoriBul(aciklama, satici){
 }
 
 const SATIR = /^\[?\s*(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})[,]?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*\]?\s*(?:-\s*)?([^:]{1,64}):\s*([\s\S]*)$/;
-const SISTEM = /(şifreli|sifreli|bu mesaj silindi|oluşturdunuz|olusturdunuz|değiştirdiniz|degistirdiniz|ekledi|ayrıldı|ayrildi|çıkardı|cikardi|katıldı|katildi|güvenlik kodu|görüntülü|sesli arama)/i;
+const SISTEM = /(şifreli|sifreli|bu mesaj(?:ı)? (?:silindi|sildiniz)|oluşturdunuz|olusturdunuz|değiştirdiniz|degistirdiniz|ekledi|ayrıldı|ayrildi|çıkardı|cikardi|katıldı|katildi|güvenlik kodu|görüntülü|sesli arama)/i;
+const DUZENLENDI = /\s*<Bu mesaj düzenlendi>\s*$/i;
 
 function ayikla(metin){
   const satirlar = metin.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g,'').split(/\r?\n/);
@@ -204,11 +205,12 @@ function ayikla(metin){
   for(const ham of satirlar){
     const m = ham.match(SATIR);
     if(!m) continue;
-    const [,g,ay,yl,,,kisi,mesaj] = m;
+    const [,g,ay,yl,,,kisi,mesajHam] = m;
     const yil = yl.length===2 ? '20'+yl : yl;
     const tarih = `${yil}-${ay.padStart(2,'0')}-${g.padStart(2,'0')}`;
-    const t = tutarAyikla(mesaj.trim());
-    if(!t){ if(mesaj.trim() && !SISTEM.test(mesaj)) atlanan.push(mesaj.trim().slice(0,52)); continue; }
+    const mesaj = mesajHam.replace(DUZENLENDI, '').trim();
+    const t = tutarAyikla(mesaj);
+    if(!t){ if(mesaj && !SISTEM.test(mesaj)) atlanan.push(mesaj.slice(0,52)); continue; }
     let metin2 = t.kalan, taksit = 1;
     const tm = metin2.match(/(\d{1,2})\s*taksit(?:li|e)?/i);
     if(tm){ taksit = parseInt(tm[1],10) || 1; metin2 = (metin2.slice(0,tm.index)+metin2.slice(tm.index+tm[0].length)).trim(); }
