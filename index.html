@@ -77,6 +77,33 @@ section{margin-top:2.3rem}
 .sira .cub{height:6px;background:#DDE3D6;border-radius:99px;overflow:hidden}
 .sira .cub i{display:block;height:100%;background:var(--erik);border-radius:99px}
 
+/* donut */
+.donut{width:130px;height:130px;border-radius:50%;margin:.2rem auto 1.3rem;position:relative}
+.donut .donutIc{position:absolute;inset:17px;background:var(--kart);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.donut .donutIc b{font-size:1rem;letter-spacing:-.02em}
+.donut .donutIc span{font-size:.6rem;color:var(--sis);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem}
+
+/* kategori satırı — genişleyen */
+details.katSatir{margin-bottom:.85rem}
+details.katSatir:last-child{margin-bottom:0}
+details.katSatir summary{list-style:none;font-weight:400;padding:0;cursor:pointer}
+details.katSatir summary::-webkit-details-marker{display:none}
+details.katSatir summary::after{content:none}
+details.katSatir .sira{margin-bottom:0}
+.katNokta{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:.4rem;vertical-align:middle}
+.katSatir .ok{display:inline-block;margin-left:.3rem;color:var(--sis);font-style:normal;transition:transform .15s ease}
+details.katSatir[open] .ok{transform:rotate(90deg)}
+.katMeta{font-size:.71rem;color:var(--sis);margin-top:.32rem}
+.katIcerik{margin-top:.65rem;padding-top:.15rem;border-top:1px dashed var(--cizgi)}
+
+/* kişi × kategori matrisi */
+.matris{width:100%}
+.matrisSatir{display:grid;gap:.5rem;align-items:baseline;padding:.42rem 0}
+.matrisSatir+.matrisSatir{border-top:1px solid rgba(203,211,198,.5)}
+.matrisSatir span{font-size:.85rem}
+.matrisSatir.matrisBaslik{padding-bottom:.55rem}
+.matrisSatir.matrisBaslik span{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--sis);font-weight:600}
+
 /* satıcı / defter — imza öğesi */
 .kalem{display:flex;align-items:baseline;gap:.45rem;padding:.42rem 0}
 .kalem+.kalem{border-top:1px solid rgba(203,211,198,.5)}
@@ -157,11 +184,6 @@ footer{margin-top:2.6rem;font-size:.72rem;color:var(--sis);text-align:center}
     <div class="kart" id="kategoriler"></div>
   </section>
 
-  <section id="bolSatici">
-    <div class="baslik"><span class="goz">Nereden alındı</span></div>
-    <div class="kart" id="saticilar"></div>
-  </section>
-
   <section id="bolProj">
     <div class="baslik"><span class="goz">Taksit yükü</span><span class="goz">önümüzdeki 6 ay</span></div>
     <div class="kart"><div class="proj" id="proj"></div></div>
@@ -170,11 +192,17 @@ footer{margin-top:2.6rem;font-size:.72rem;color:var(--sis);text-align:center}
   <section>
     <div class="baslik"><span class="goz">Kim harcadı</span></div>
     <div class="ikili" id="kisiler"></div>
+    <div class="kart" id="kisiKatMatris" style="margin-top:.7rem"></div>
   </section>
 
   <section id="bolTrend">
     <div class="baslik"><span class="goz">Aylık seyir</span></div>
     <div class="kart" id="trend"></div>
+  </section>
+
+  <section id="bolGunluk">
+    <div class="baslik"><span class="goz">Günlük seyir</span><span class="goz" id="gunlukEt"></span></div>
+    <div class="kart" id="gunlukTrend"></div>
   </section>
 
   <section>
@@ -407,27 +435,75 @@ function ciz(d, ay){
     : 'Hedef belirlenmedi';
   document.getElementById('hedefEt').style.color = (hedef && toplam>hedef) ? '#9B2226' : '';
 
-  /* kategoriler */
-  const grup = (arr,alan) => {
-    const m = {};
-    for(const k of arr){ const ad = (k[alan]||'').trim() || '—'; m[ad]=(m[ad]||0)+k.tutar; }
-    return Object.entries(m).filter(x=>x[1]!==0).sort((x,y)=>y[1]-x[1]);
-  };
-  const kats = grup(a.kalemler,'kategori');
-  const enb = kats.length ? Math.abs(kats[0][1]) : 1;
-  document.getElementById('katSayi').textContent = kats.length + ' başlık';
-  document.getElementById('kategoriler').innerHTML = kats.length ? kats.map(([ad,v])=>`
-    <div class="sira">
-      <div class="ust"><span class="ad">${esc(ad)}</span><span class="rak mono">${TL0(v)} ₺</span></div>
-      <div class="cub"><i style="width:${Math.abs(v)/enb*100}%"></i></div>
-    </div>`).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
+  /* kategoriler + kişi kırılımı (tek geçiş) */
+  const RENK = ['#6B2D5C','#B8862B','#2F7B72','#8A3B2B','#4C6B54','#5B5F97','#A15843','#3E7C8C','#7A6C3F','#9C4F6E','#557153','#B0623A'];
+  const katGrup = {};
+  for(const k of a.kalemler){
+    const kat = (k.kategori||'').trim() || 'Diğer';
+    const g = (katGrup[kat] = katGrup[kat] || {toplam:0, adet:0, kisiler:{}, kalemler:[]});
+    g.toplam += k.tutar; g.adet++; g.kalemler.push(k);
+    if(k.kisi) g.kisiler[k.kisi] = (g.kisiler[k.kisi]||0) + k.tutar;
+  }
+  const katListe = Object.entries(katGrup).filter(([,g])=>g.toplam!==0).sort((x,y)=>y[1].toplam-x[1].toplam);
+  const katPayToplam = katListe.reduce((s,[,g])=>s+Math.abs(g.toplam),0) || 1;
+  const enbKat = katListe.length ? Math.abs(katListe[0][1].toplam) : 1;
+  document.getElementById('katSayi').textContent = katListe.length + ' başlık';
 
-  /* satıcılar */
-  const sat = grup(a.kalemler.filter(k=>k.satici),'satici').slice(0,10);
-  document.getElementById('bolSatici').hidden = !sat.length;
-  document.getElementById('saticilar').innerHTML = sat.map(([ad,v])=>`
-    <div class="kalem"><div class="sol"><span class="ad">${esc(ad)}</span></div>
-    <span class="nokta"></span><span class="rak mono">${TL0(v)} ₺</span></div>`).join('');
+  let acisal = 0;
+  const donutHtml = katListe.length ? `<div class="donut" style="background:conic-gradient(${
+    katListe.map(([,g],i)=>{
+      const oran = Math.abs(g.toplam)/katPayToplam*100, bas = acisal; acisal += oran;
+      return `${RENK[i%RENK.length]} ${bas.toFixed(2)}% ${acisal.toFixed(2)}%`;
+    }).join(',')
+  })"><div class="donutIc"><b class="mono">${TL0(toplam)} ₺</b><span>bu ay</span></div></div>` : '';
+
+  document.getElementById('kategoriler').innerHTML = katListe.length ? donutHtml + katListe.map(([ad,g],i)=>{
+    const pay = Math.abs(g.toplam)/katPayToplam*100;
+    const renk = RENK[i%RENK.length];
+    const kisiOzet = Object.entries(g.kisiler).sort((x,y)=>y[1]-x[1])
+      .map(([ki,tu])=>`${esc(ki.split(' ')[0])} ${TL0(tu)} ₺`).join(' · ');
+    const icerikKls = [...g.kalemler].sort((x,y)=>Math.abs(y.tutar)-Math.abs(x.tutar));
+    return `<details class="katSatir">
+      <summary>
+        <div class="sira">
+          <div class="ust">
+            <span class="ad"><i class="katNokta" style="background:${renk}"></i>${esc(ad)}</span>
+            <span class="rak mono">${TL0(g.toplam)} ₺<i class="ok">›</i></span>
+          </div>
+          <div class="cub"><i style="width:${Math.abs(g.toplam)/enbKat*100}%;background:${renk}"></i></div>
+        </div>
+        <div class="katMeta">%${pay.toFixed(1)} · ${g.adet} kayıt${kisiOzet ? ' · '+kisiOzet : ''}</div>
+      </summary>
+      <div class="katIcerik">${icerikKls.map(k=>{
+        const gg = k.tarih.slice(8,10)+'.'+k.tarih.slice(5,7);
+        const kim = k.kisi ? `<span class="kim ${k.kisi.toLowerCase().startsWith('m')?'m':'o'}">${esc(k.kisi.split(' ')[0])}</span>` : '';
+        return `<div class="kalem"><div class="sol"><span class="ad">${esc(k.aciklama||'—')}</span>
+          <span class="meta"><span class="mono">${gg}</span>${kim}${k.satici?'<span>'+esc(k.satici)+'</span>':''}</span></div>
+          <span class="nokta"></span><span class="rak mono ${k.tutar<0?'eksi':''}">${TL(k.tutar)} ₺</span></div>`;
+      }).join('')}</div>
+    </details>`;
+  }).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
+
+  /* kişi × kategori matrisi */
+  const kisiSirali = [...new Set(a.kalemler.map(k=>k.kisi).filter(Boolean))]
+    .sort((x,y)=>{
+      const tx = katListe.reduce((s,[,g])=>s+(g.kisiler[x]||0),0), ty = katListe.reduce((s,[,g])=>s+(g.kisiler[y]||0),0);
+      return ty-tx;
+    });
+  const matrisEl = document.getElementById('kisiKatMatris');
+  if(!katListe.length || !kisiSirali.length){
+    matrisEl.innerHTML = '<div class="bos">Bu ayda kayıt yok.</div>';
+  } else {
+    const izgara = `1fr ${kisiSirali.map(()=>'auto').join(' ')} auto`;
+    const basSatir = `<div class="matrisSatir matrisBaslik" style="grid-template-columns:${izgara}">
+      <span>Kategori</span>${kisiSirali.map(ki=>`<span class="mono" style="text-align:right">${esc(ki.split(' ')[0])}</span>`).join('')}<span class="mono" style="text-align:right">Toplam</span></div>`;
+    const satirlar = katListe.map(([ad,g])=>{
+      const hucreler = kisiSirali.map(ki=>`<span class="mono" style="text-align:right">${TL0(g.kisiler[ki]||0)} ₺</span>`).join('');
+      return `<div class="matrisSatir" style="grid-template-columns:${izgara}">
+        <span>${esc(ad)}</span>${hucreler}<span class="mono" style="text-align:right;font-weight:600">${TL0(g.toplam)} ₺</span></div>`;
+    }).join('');
+    matrisEl.innerHTML = basSatir + satirlar;
+  }
 
   /* projeksiyon */
   const ayEkle = (k,n)=>{ let [y,m]=k.split('-').map(Number); m+=n; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); };
@@ -456,6 +532,22 @@ function ciz(d, ay){
     <span class="rak mono">${TL0(v)} ₺</span></div>
     <div class="cub"><i style="width:${v/tmax*100}%;background:${k===ay?'var(--erik)':'#B7C2B2'}"></i></div></div>`;
   }).join('');
+
+  /* günlük seyir (seçili ay) */
+  const GUNAD = ['Paz','Pzt','Sal','Çar','Per','Cum','Cts'];
+  const gunGrup = {};
+  for(const k of a.kalemler){ const gg = k.tarih.slice(8,10); gunGrup[gg] = (gunGrup[gg]||0) + k.tutar; }
+  const gunSayisi2 = new Date(yy,mm,0).getDate();
+  const gunler = Array.from({length:gunSayisi2},(_,i)=>{
+    const gg = String(i+1).padStart(2,'0');
+    return {gun:gg, tutar:gunGrup[gg]||0, haftaGunu:GUNAD[new Date(ay+'-'+gg+'T00:00:00').getDay()]};
+  });
+  const gmax = Math.max(...gunler.map(x=>x.tutar),1);
+  document.getElementById('gunlukEt').textContent = gunler.filter(x=>x.tutar).length + ' gün hareketli';
+  document.getElementById('gunlukTrend').innerHTML = gunler.map(gn=>`
+    <div class="sira"><div class="ust"><span class="ad" style="${gn.tutar?'':'opacity:.4'}">${gn.gun} <span style="color:var(--sis);font-weight:400">${gn.haftaGunu}</span></span>
+    <span class="rak mono">${gn.tutar ? TL0(gn.tutar)+' ₺' : '—'}</span></div>
+    <div class="cub"><i style="width:${gn.tutar/gmax*100}%"></i></div></div>`).join('');
 
   /* defter */
   const kls = [...a.kalemler].sort((x,y)=> y.tarih.localeCompare(x.tarih) || Math.abs(y.tutar)-Math.abs(x.tutar));
