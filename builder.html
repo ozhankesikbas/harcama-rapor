@@ -69,7 +69,9 @@ a{color:var(--erik)}
 <div class="adim">
   <h2><span class="no">1</span>Sohbet dosyası</h2>
   <input type="file" id="dosya" accept=".txt,text/plain">
-  <div class="ipucu">WhatsApp → Harcamalar grubu → Sohbeti Dışa Aktar → <b>Medya olmadan</b> → Dosyalara Kaydet. Sonra buradan seç.</div>
+  <button class="btn ikincil" id="yapistirBtn" style="margin-top:.6rem">Panodan yapıştır</button>
+  <div class="ipucu">WhatsApp → Harcamalar grubu → Sohbeti Dışa Aktar → <b>Medya olmadan</b> → Dosyalara Kaydet. Sonra buradan seç. <b>Ya da:</b> kısayolun panoya kopyaladığı metni "Panodan yapıştır" ile al.</div>
+  <div id="yapistirDurum" class="ipucu" style="color:#9B2226"></div>
   <div id="rapor" class="rapor gizle"></div>
   <div id="atlanan" class="uyari gizle"></div>
   <div id="kategorisiz" class="uyari gizle"></div>
@@ -298,11 +300,10 @@ $('repo').value  = localStorage.getItem('hd_repo')  || 'harcama-rapor';
 $('tBas').value = new Date().toISOString().slice(0,7);
 tkCiz();
 
-$('dosya').addEventListener('change', async e=>{
-  const f = e.target.files[0]; if(!f) return;
+async function metniIsle(metin){
+  $('yapistirDurum').textContent = '';
   await KURALLAR_HAZIR;
   YENI_KURALLAR = {};
-  const metin = await f.text();
   const {kayitlar, atlanan} = ayikla(metin);
   KAYITLAR = kayitlar;
   const toplam = kayitlar.reduce((s,k)=>s+k.tutar,0);
@@ -337,6 +338,21 @@ $('dosya').addEventListener('change', async e=>{
         </select>
       </div>`).join('')}</div>` : '';
   kontrol();
+}
+
+$('dosya').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  await metniIsle(await f.text());
+});
+
+$('yapistirBtn').addEventListener('click', async () => {
+  try{
+    const metin = await navigator.clipboard.readText();
+    if(!metin.trim()){ $('yapistirDurum').textContent = 'Pano boş.'; return; }
+    await metniIsle(metin);
+  }catch(e){
+    $('yapistirDurum').textContent = 'Panoya erişilemedi. Tarayıcı izin istemiş olabilir, tekrar dene.';
+  }
 });
 
 $('kategorisiz').addEventListener('change', e=>{
