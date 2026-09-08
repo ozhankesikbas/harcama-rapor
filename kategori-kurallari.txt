@@ -2,6 +2,7 @@
 pazar
 
 #Ev & yapı
+elektrik süpürgesi, amazon
 ev muhtelif
 ev muhtelif, amazon
 milyoncu
@@ -14,3 +15,4 @@ ulaşım
 
 #Seyahat & Vize
 fotoğraf
+seyahat sigortası
