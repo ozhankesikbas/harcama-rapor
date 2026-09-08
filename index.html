@@ -97,12 +97,16 @@ details.katSatir[open] .ok{transform:rotate(90deg)}
 .katIcerik{margin-top:.65rem;padding-top:.15rem;border-top:1px dashed var(--cizgi)}
 
 /* kişi × kategori matrisi */
-.matris{width:100%}
-.matrisSatir{display:grid;gap:.5rem;align-items:baseline;padding:.42rem 0}
-.matrisSatir+.matrisSatir{border-top:1px solid rgba(203,211,198,.5)}
-.matrisSatir span{font-size:.85rem}
-.matrisSatir.matrisBaslik{padding-bottom:.55rem}
-.matrisSatir.matrisBaslik span{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--sis);font-weight:600}
+.matrisTablo{width:100%;border-collapse:collapse;font-size:.82rem}
+.matrisTablo th,.matrisTablo td{padding:.5rem .3rem;text-align:right;white-space:nowrap}
+.matrisTablo th:first-child,.matrisTablo td:first-child{text-align:left;padding-left:0;white-space:normal}
+.matrisTablo th:last-child,.matrisTablo td:last-child{padding-right:0}
+.matrisTablo thead th{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--sis);font-weight:600;border-bottom:2px solid var(--cizgi);padding-bottom:.6rem}
+.matrisTablo tbody td{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.matrisTablo tbody td:first-child{font-family:"Public Sans",sans-serif;font-variant-numeric:normal}
+.matrisTablo tbody tr:nth-child(even){background:rgba(203,211,198,.22)}
+.matrisTablo tfoot td{border-top:2px solid var(--cizgi);font-weight:700;padding-top:.6rem;font-family:"JetBrains Mono",monospace}
+.matrisTablo tfoot td:first-child{font-family:"Public Sans",sans-serif}
 
 /* satıcı / defter — imza öğesi */
 .kalem{display:flex;align-items:baseline;gap:.45rem;padding:.42rem 0}
@@ -535,15 +539,15 @@ function ciz(d, ay){
   if(!katListe.length || !kisiSirali.length){
     matrisEl.innerHTML = '<div class="bos">Bu ayda kayıt yok.</div>';
   } else {
-    const izgara = `1fr ${kisiSirali.map(()=>'auto').join(' ')} auto`;
-    const basSatir = `<div class="matrisSatir matrisBaslik" style="grid-template-columns:${izgara}">
-      <span>Kategori</span>${kisiSirali.map(ki=>`<span class="mono" style="text-align:right">${esc(ki.split(' ')[0])}</span>`).join('')}<span class="mono" style="text-align:right">Toplam</span></div>`;
-    const satirlar = katListe.map(([ad,g])=>{
-      const hucreler = kisiSirali.map(ki=>`<span class="mono" style="text-align:right">${TL0(g.kisiler[ki]||0)} ₺</span>`).join('');
-      return `<div class="matrisSatir" style="grid-template-columns:${izgara}">
-        <span>${esc(ad)}</span>${hucreler}<span class="mono" style="text-align:right;font-weight:600">${TL0(g.toplam)} ₺</span></div>`;
-    }).join('');
-    matrisEl.innerHTML = basSatir + satirlar;
+    const satirToplam = ki => katListe.reduce((s,[,g])=>s+(g.kisiler[ki]||0),0);
+    const genelToplam = katListe.reduce((s,[,g])=>s+g.toplam,0);
+    matrisEl.innerHTML = `<div style="overflow-x:auto"><table class="matrisTablo">
+      <thead><tr><th>Kategori</th>${kisiSirali.map(ki=>`<th>${esc(ki.split(' ')[0])}</th>`).join('')}<th>Toplam</th></tr></thead>
+      <tbody>${katListe.map(([ad,g])=>`
+        <tr><td>${esc(ad)}</td>${kisiSirali.map(ki=>`<td>${TL0(g.kisiler[ki]||0)} ₺</td>`).join('')}<td>${TL0(g.toplam)} ₺</td></tr>`).join('')}
+      </tbody>
+      <tfoot><tr><td>Toplam</td>${kisiSirali.map(ki=>`<td>${TL0(satirToplam(ki))} ₺</td>`).join('')}<td>${TL0(genelToplam)} ₺</td></tr></tfoot>
+    </table></div>`;
   }
 
   /* satıcılar */
