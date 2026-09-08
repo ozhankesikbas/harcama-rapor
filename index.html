@@ -184,6 +184,11 @@ footer{margin-top:2.6rem;font-size:.72rem;color:var(--sis);text-align:center}
     <div class="kart" id="kategoriler"></div>
   </section>
 
+  <section id="bolSatici">
+    <div class="baslik"><span class="goz">Nereden alındı</span><span class="goz" id="saticiSayi"></span></div>
+    <div class="kart" id="saticilar"></div>
+  </section>
+
   <section id="bolProj">
     <div class="baslik"><span class="goz">Taksit yükü</span><span class="goz">önümüzdeki 6 ay</span></div>
     <div class="kart"><div class="proj" id="proj"></div></div>
@@ -252,6 +257,25 @@ const b64bin = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 const b64 = u8 => btoa(String.fromCharCode(...u8));
 function hashId(str){ let h=5381; for(let i=0;i<str.length;i++) h=((h*33)^str.charCodeAt(i))>>>0; return h.toString(36); }
 const KATEGORILER = ['Market','Atıştırmalık','Dışarıda yemek','Ev & yapı','Sağlık','Araç','Kişisel bakım','Giyim','Elektronik','Fatura & abonelik','Ulaşım','Eğlence & hediye','Seyahat & Vize','Bağış','Taksit','Diğer'];
+const kucuk = s => s.toLocaleLowerCase('tr').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g')
+  .replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/â/g,'a');
+function kurallariCoz(metin){
+  const liste = [];
+  let mevcutKat = null;
+  for(const satir of metin.split(/\r?\n/)){
+    const s = satir.trim();
+    if(!s) continue;
+    if(s.startsWith('#')){ mevcutKat = s.slice(1).trim(); continue; }
+    if(mevcutKat) liste.push({ifade:s, kategori:mevcutKat});
+  }
+  return liste;
+}
+function kurallariYaz(liste){
+  const gruplar = {};
+  for(const r of liste) (gruplar[r.kategori] = gruplar[r.kategori] || []).push(r.ifade);
+  const katSirasi = [...new Set([...KATEGORILER, ...Object.keys(gruplar)])].filter(k=>gruplar[k]);
+  return katSirasi.map(kat => `#${kat}\n${gruplar[kat].sort((a,b)=>a.localeCompare(b,'tr')).join('\n')}`).join('\n\n') + '\n';
+}
 
 async function anahtar(parola, tuz, izin){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(parola), 'PBKDF2', false, ['deriveKey']);
@@ -301,8 +325,9 @@ document.getElementById('yayinlaBtn').addEventListener('click', async ()=>{
   if(!owner||!repo||!token){ durum.style.color='#9B2226'; durum.textContent='Kullanıcı, repo ve token gerekli.'; return; }
   btn.disabled = true; durum.style.color=''; durum.textContent = 'Uygulanıyor…';
   try{
-    for(const k of VERI.kayitlar||[]) if(DUZENLEMELER[k.id]!==undefined) k.kategori = DUZENLEMELER[k.id];
-    for(const t of VERI.taksitler||[]) if(DUZENLEMELER[t.id]!==undefined) t.kategori = DUZENLEMELER[t.id];
+    const yeniKurallar = [];
+    for(const k of VERI.kayitlar||[]) if(DUZENLEMELER[k.id]!==undefined){ k.kategori = DUZENLEMELER[k.id]; yeniKurallar.push({ifade:k.aciklama, kategori:k.kategori}); }
+    for(const t of VERI.taksitler||[]) if(DUZENLEMELER[t.id]!==undefined){ t.kategori = DUZENLEMELER[t.id]; yeniKurallar.push({ifade:t.ad, kategori:t.kategori}); }
     VERI.guncelleme = new Date().toISOString();
 
     durum.textContent = 'Şifreleniyor…';
@@ -323,6 +348,22 @@ document.getElementById('yayinlaBtn').addEventListener('click', async ()=>{
     if(sha) govde.sha = sha;
     const p = await fetch(url, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(govde)});
     if(!p.ok) throw new Error('Yükleme başarısız ('+p.status+'). '+((await p.json().catch(()=>({}))).message||''));
+
+    if(yeniKurallar.length){
+      durum.textContent = 'Kategori kuralları güncelleniyor…';
+      const kUrl = `https://api.github.com/repos/${owner}/${repo}/contents/kategori-kurallari.txt`;
+      let kSha = null, mevcutKurallar = [];
+      const kg = await fetch(kUrl+'?ref=main', {headers:bas});
+      if(kg.ok){ const kgj = await kg.json(); kSha = kgj.sha; mevcutKurallar = kurallariCoz(new TextDecoder().decode(b64bin(kgj.content.replace(/\n/g,'')))); }
+      const harita = {};
+      for(const r of mevcutKurallar) harita[kucuk(r.ifade)] = r;
+      for(const r of yeniKurallar) harita[kucuk(r.ifade)] = r;
+      const kGovde = {message:'kategori güncelleme (panel) '+new Date().toLocaleDateString('tr-TR'), branch:'main',
+        content: b64(new TextEncoder().encode(kurallariYaz(Object.values(harita))))};
+      if(kSha) kGovde.sha = kSha;
+      const kp = await fetch(kUrl, {method:'PUT', headers:{...bas,'Content-Type':'application/json'}, body:JSON.stringify(kGovde)});
+      if(!kp.ok) throw new Error('Kategori kuralları yüklenemedi ('+kp.status+').');
+    }
 
     localStorage.setItem('hd_owner',owner); localStorage.setItem('hd_repo',repo); localStorage.setItem('hd_token',token);
     DUZENLEMELER = {};
@@ -504,6 +545,40 @@ function ciz(d, ay){
     }).join('');
     matrisEl.innerHTML = basSatir + satirlar;
   }
+
+  /* satıcılar */
+  const satGrup = {};
+  for(const k of a.kalemler){
+    if(!k.satici) continue;
+    const g = (satGrup[k.satici] = satGrup[k.satici] || {toplam:0, adet:0, kalemler:[]});
+    g.toplam += k.tutar; g.adet++; g.kalemler.push(k);
+  }
+  const satListe = Object.entries(satGrup).filter(([,g])=>g.toplam!==0).sort((x,y)=>y[1].toplam-x[1].toplam);
+  const enbSat = satListe.length ? Math.abs(satListe[0][1].toplam) : 1;
+  document.getElementById('bolSatici').hidden = !satListe.length;
+  document.getElementById('saticiSayi').textContent = satListe.length + ' satıcı';
+  document.getElementById('saticilar').innerHTML = satListe.length ? satListe.map(([ad,g])=>{
+    const icerikKls = [...g.kalemler].sort((x,y)=>Math.abs(y.tutar)-Math.abs(x.tutar));
+    return `<details class="katSatir">
+      <summary>
+        <div class="sira">
+          <div class="ust">
+            <span class="ad">${esc(ad)}</span>
+            <span class="rak mono">${TL0(g.toplam)} ₺<i class="ok">›</i></span>
+          </div>
+          <div class="cub"><i style="width:${Math.abs(g.toplam)/enbSat*100}%;background:var(--altin)"></i></div>
+        </div>
+        <div class="katMeta">${g.adet} kayıt</div>
+      </summary>
+      <div class="katIcerik">${icerikKls.map(k=>{
+        const gg = k.tarih.slice(8,10)+'.'+k.tarih.slice(5,7);
+        const kim = k.kisi ? `<span class="kim ${k.kisi.toLowerCase().startsWith('m')?'m':'o'}">${esc(k.kisi.split(' ')[0])}</span>` : '';
+        return `<div class="kalem"><div class="sol"><span class="ad">${esc(k.aciklama||'—')}</span>
+          <span class="meta"><span class="mono">${gg}</span>${kim}</span></div>
+          <span class="nokta"></span><span class="rak mono ${k.tutar<0?'eksi':''}">${TL(k.tutar)} ₺</span></div>`;
+      }).join('')}</div>
+    </details>`;
+  }).join('') : '<div class="bos">Bu ayda kayıt yok.</div>';
 
   /* projeksiyon */
   const ayEkle = (k,n)=>{ let [y,m]=k.split('-').map(Number); m+=n; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); };
