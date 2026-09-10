@@ -7,6 +7,9 @@ ev muhtelif
 ev muhtelif, amazon
 milyoncu
 
+#Araç
+Clio Kasko
+
 #Kişisel bakım
 online
 
