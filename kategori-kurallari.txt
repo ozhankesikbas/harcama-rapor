@@ -13,6 +13,14 @@ Clio Sigorta
 
 #Kişisel bakım
 online
+saç traş
+
+#Giyim
+güneş gözlüğü
+
+#Elektronik
+ekran koruyucu
+trendyol
 
 #Ulaşım
 ulaşım
