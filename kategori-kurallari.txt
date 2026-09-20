@@ -20,6 +20,9 @@ güneş gözlüğü
 
 #Elektronik
 ekran koruyucu
+klavye seti
+mousepad
+okul araç gereçleri
 trendyol
 
 #Ulaşım
@@ -27,4 +30,5 @@ ulaşım
 
 #Seyahat & Vize
 fotoğraf
+gezi
 seyahat sigortası
