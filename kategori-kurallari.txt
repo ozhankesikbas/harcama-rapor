@@ -1,10 +1,14 @@
 #Market
 pazar
 
+#Dışarıda yemek
+stwrbucks
+
 #Ev & yapı
 elektrik süpürgesi, amazon
 ev muhtelif
 ev muhtelif, amazon
+ev yapı
 kek kalıbı
 kırtasiye
 milyoncu
