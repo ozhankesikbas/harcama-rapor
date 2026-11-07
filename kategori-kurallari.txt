@@ -5,6 +5,7 @@ pazar
 stwrbucks
 
 #Ev & yapı
+ampul
 elektrik süpürgesi, amazon
 ev muhtelif
 ev muhtelif, amazon
@@ -27,9 +28,12 @@ saç traş
 
 #Giyim
 güneş gözlüğü
+kayak ekipman
+kayak ekipmanları
 
 #Elektronik
 ekran koruyucu
+elektronik
 klavye seti
 lens adası koruyucu
 mousepad
